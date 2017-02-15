@@ -81,6 +81,11 @@ class DBInterface(object):
     SONiC uses the default port.
     """
 
+    REDIS_UNIX_SOCKET_PATH = "/var/run/redis/redis.sock"
+    """
+    SONiC uses the default unix socket.
+    """
+
     CONNECT_RETRY_WAIT_TIME = 10
     """
     Wait period in seconds before attempting to reconnect to Redis.
@@ -179,8 +184,7 @@ class DBInterface(object):
             raise ValueError("No database ID configured for '{}'".format(db_name))
 
         kwargs = dict(
-            host=self.REDIS_HOST,
-            port=self.REDIS_PORT,
+            unix_socket_path=self.REDIS_UNIX_SOCKET_PATH
         )
         kwargs.update(self.db_map[db_name])
 
