@@ -1,5 +1,5 @@
 """
-Database connection module for SSW.
+Database connection module for SwSS
 """
 from . import _connector_map, logger
 from .interface import DBInterface
@@ -35,5 +35,5 @@ if len(SonicV2Connector.db_map) != len({v['db'] for k, v in SonicV2Connector.db_
 
 
 class DBConnector(SonicV1Connector):
-    logger.warning("DBConnector is DEPRECATED. 'sswsdk.dbconnector.DBConnector' -> 'sswsdk.SonicV1Connector'")
+    logger.warning("DBConnector is DEPRECATED. 'swsssdk.dbconnector.DBConnector' -> 'swsssdk.SonicV1Connector'")
     pass

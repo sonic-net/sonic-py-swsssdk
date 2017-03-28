@@ -9,11 +9,11 @@ high_performance_deps = [
 ]
 
 setup(
-    name='sswsdk',
+    name='swsssdk',
     version='2.0.1',
-    package_dir={'sswsdk': 'src/sswsdk'},
-    packages=['sswsdk'],
-    package_data={'sswsdk': ['config/*.json']},
+    package_dir={'swsssdk': 'src/swsssdk'},
+    packages=['swsssdk'],
+    package_data={'swsssdk': ['config/*.json']},
     license='Apache 2.0',
     author='SONiC Team',
     author_email='linuxnetdev@microsoft.com',

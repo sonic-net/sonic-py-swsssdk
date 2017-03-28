@@ -299,7 +299,7 @@ class DBInterface(object):
         When the queried config is not available in Redis--wait until it is available.
         Two timeouts are at work here:
         1. Notification timeout - how long to wait before giving up on receiving any given pub-sub message.
-        2. Max data wait - sswsdk-specific. how long to wait for the data to populate (in absolute time)
+        2. Max data wait - swsssdk-specific. how long to wait for the data to populate (in absolute time)
         """
         start = time.time()
         logger.debug("Listening on pubsub channel '{}'".format(db_name))

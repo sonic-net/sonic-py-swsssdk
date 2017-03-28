@@ -1,8 +1,8 @@
-class SSWQueryError(Exception):
+class SwSSQueryError(Exception):
     """ Base exception class """
 
 
-class UnavailableDataError(SSWQueryError):
+class UnavailableDataError(SwSSQueryError):
     def __init__(self, message, data, *args, **kwargs):
         super(UnavailableDataError, self).__init__(message, *args, **kwargs)
         """
@@ -42,5 +42,5 @@ class UnavailableDataError(SSWQueryError):
         self.data = data if type(data) is bytes else data.encode('ascii')
 
 
-class MissingClientError(SSWQueryError):
+class MissingClientError(SwSSQueryError):
     """ Raised when a queried client wasn't found. """
