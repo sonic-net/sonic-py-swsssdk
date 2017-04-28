@@ -234,7 +234,7 @@ class DBInterface(object):
         logger.debug("Subscribe to keyspace notification")
         client = self.redis_clients[db_name]
         pubsub = client.pubsub()
-        pubsub.psubscribe(self.KEYSPACE_PATTERN) # FIXME: subscribe to specific pattern
+        pubsub.psubscribe(self.KEYSPACE_PATTERN)
         self.keyspace_notification_channels[db_name] = pubsub
 
     def _unsubscribe_keyspace_notification(self, db_name):
