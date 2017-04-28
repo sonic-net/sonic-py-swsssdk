@@ -41,7 +41,11 @@ def blockable(f):
             except UnavailableDataError as e:
                 if blocking:
                     if db_name in inst.keyspace_notification_channels:
-                        inst._unavailable_data_handler(db_name, e.data) # FIXME: What if we don't receive any data in timeout? We could block here
+                        result = inst._unavailable_data_handler(db_name, e.data)
+                        if result:
+                            continue
+                        else:
+                            raise # No updates
                     else:
                         inst._subscribe_keyspace_notification(db_name)
                 else:
@@ -324,9 +328,10 @@ class DBInterface(object):
                 logger.info("'{}' acquired via pub-sub. Unblocking...".format(data, db_name))
                 # Wait for a "settling" period before releasing the wait.
                 time.sleep(self.DATA_RETRIEVAL_WAIT_TIME)
-                return
+                return True
 
         logger.warning("No notification for '{}' from '{}' received before timeout.".format(data, db_name))
+        return False
 
     def _connection_error_handler(self, db_name):
         """
