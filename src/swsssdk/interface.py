@@ -45,6 +45,7 @@ def blockable(f):
                         if result:
                             continue # received updates, try to read data again
                         else:
+                            inst._unsubscribe_keyspace_notification(db_name)
                             raise    # No updates was received. Raise exception
                     else: # Subscribe to updates and try it again (avoiding race condition)
                         inst._subscribe_keyspace_notification(db_name)
