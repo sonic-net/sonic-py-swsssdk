@@ -237,7 +237,7 @@ class DBInterface(object):
         """
         Unsubscribe the chosent client from keyspace event notifications
         """
-        if db_name in inst.keyspace_notification_channels:
+        if db_name in self.keyspace_notification_channels:
             logger.debug("Unsubscribe from keyspace notification")
             self.keyspace_notification_channels[db_name].close()
             del self.keyspace_notification_channels[db_name]
