@@ -280,7 +280,7 @@ class DBInterface(object):
         client = self.redis_clients[db_name]
         val = client.hget(_hash, key)
         if not val:
-            message = "Key '{}' unavailable in database '{}' - table '{}'".format(key, _hash, db_name)
+            message = "Key '{}' field '{}' unavailable in database '{}'".format(_hash, key, db_name)
             logger.warning(message)
             raise UnavailableDataError(message, key)
         else:
@@ -298,7 +298,7 @@ class DBInterface(object):
         client = self.redis_clients[db_name]
         table = client.hgetall(_hash)
         if not table:
-            message = "Table '{}' does not exist in database '{}'".format(_hash, db_name)
+            message = "Key '{}' unavailable in database '{}'".format(_hash, db_name)
             logger.warning(message)
             raise UnavailableDataError(message, _hash)
         else:
