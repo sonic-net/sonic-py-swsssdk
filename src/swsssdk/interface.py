@@ -35,10 +35,15 @@ def blockable(f):
         attempts = 0
         while True:
             try:
-                return f(inst, db_name, *args, **kwargs)
+                ret_data = f(inst, db_name, *args, **kwargs)
+                inst._unsubscribe_keyspace_notification(db_name)
+                return ret_data
             except UnavailableDataError as e:
                 if blocking:
-                    inst._unavailable_data_handler(db_name, e.data)
+                    if db_name in inst.keyspace_notification_channels:
+                        inst._unavailable_data_handler(db_name, e.data) # FIXME: What if we don't receive any data in timeout? We could block here
+                    else:
+                        inst._subscribe_keyspace_notification(db_name)
                 else:
                     return None
             except redis.exceptions.ResponseError:
@@ -193,7 +198,6 @@ class DBInterface(object):
         # Enable the notification mechanism for keyspace events in Redis
         client.config_set('notify-keyspace-events', self.KEYSPACE_EVENTS)
         self.redis_clients[db_name] = client
-        self._subscribe_keyspace_notification(db_name, client)
 
     def _persistent_connect(self, db_name):
         """
@@ -219,13 +223,24 @@ class DBInterface(object):
         if db_name in self.keyspace_notification_channels:
             self.keyspace_notification_channels[db_name].close()
 
-    def _subscribe_keyspace_notification(self, db_name, client):
+    def _subscribe_keyspace_notification(self, db_name):
         """
         Subscribe the chosent client to keyspace event notifications
         """
+        logger.debug("Subscribe to keyspace notification")
+        client = self.redis_clients[db_name]
         pubsub = client.pubsub()
-        pubsub.psubscribe(self.KEYSPACE_PATTERN)
+        pubsub.psubscribe(self.KEYSPACE_PATTERN) # FIXME: subscribe to specific pattern
         self.keyspace_notification_channels[db_name] = pubsub
+
+    def _unsubscribe_keyspace_notification(self, db_name):
+        """
+        Unsubscribe the chosent client from keyspace event notifications
+        """
+        if db_name in inst.keyspace_notification_channels:
+            logger.debug("Unsubscribe from keyspace notification")
+            self.keyspace_notification_channels[db_name].close()
+            del self.keyspace_notification_channels[db_name]
 
     def get_redis_client(self, db_name):
         """
