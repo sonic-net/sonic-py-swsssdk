@@ -282,7 +282,7 @@ class DBInterface(object):
         if not val:
             message = "Key '{}' field '{}' unavailable in database '{}'".format(_hash, key, db_name)
             logger.warning(message)
-            raise UnavailableDataError(message, key)
+            raise UnavailableDataError(message, _hash)
         else:
             # redis only supports strings. if any item is set to string 'None', cast it back to the appropriate type.
             return None if val == b'None' else val
