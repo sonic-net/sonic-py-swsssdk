@@ -43,10 +43,10 @@ def blockable(f):
                     if db_name in inst.keyspace_notification_channels:
                         result = inst._unavailable_data_handler(db_name, e.data)
                         if result:
-                            continue
+                            continue # received updates, try to read data again
                         else:
-                            raise # No updates
-                    else:
+                            raise    # No updates was received. Raise exception
+                    else: # Subscribe to updates and try it again (avoiding race condition)
                         inst._subscribe_keyspace_notification(db_name)
                 else:
                     return None
