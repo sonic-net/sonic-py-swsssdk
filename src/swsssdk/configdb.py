@@ -47,8 +47,8 @@ class ConfigDBConnector(SonicV2Connector):
             pubsub.punsubscribe(pattern)
 
 
-    def connect(self, wait_for_init=True):
-        SonicV2Connector.connect(self, self.CONFIG_DB, False)
+    def connect(self, wait_for_init=True, retry_on=False):
+        SonicV2Connector.connect(self, self.CONFIG_DB, retry_on)
         if wait_for_init:
             self.__wait_for_db_init()
 
