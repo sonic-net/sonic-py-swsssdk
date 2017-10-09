@@ -113,9 +113,9 @@ class ConfigDBConnector(SonicV2Connector):
 
     def __typed_to_raw(self, typed_data):
         if typed_data == None:
-            return None
+            return None, None
         elif typed_data == {}:
-            return { "NULL": "NULL" }
+            return { "NULL": "NULL" }, None
         raw_data = {}
         del_data = []
         for key in typed_data:
