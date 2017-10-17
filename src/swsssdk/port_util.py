@@ -49,11 +49,11 @@ def get_bridge_port_map(db):
         Get the Bridge port mapping from ASIC DB
     """
     db.connect('ASIC_DB')
-    if_br_oid_map = {}
     br_port_str = db.keys('ASIC_DB', "ASIC_STATE:SAI_OBJECT_TYPE_BRIDGE_PORT:*")
     if not br_port_str:
-        return
+        return {}
 
+    if_br_oid_map = {}
     offset = len("ASIC_STATE:SAI_OBJECT_TYPE_BRIDGE_PORT:")
     oid_pfx = len("oid:0x")
     for br_s in br_port_str:
