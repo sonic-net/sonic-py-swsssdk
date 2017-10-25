@@ -38,6 +38,9 @@ def get_interface_oid_map(db):
     """
     db.connect('COUNTERS_DB')
     if_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_PORT_NAME_MAP', blocking=True)
+    oid_pfx = len("oid:0x")
+    if_name_map = {if_name: sai_oid[oid_pfx:] for if_name, sai_oid in if_name_map.items()}
+
     if_id_map = {sai_oid: if_name for if_name, sai_oid in if_name_map.items()
                  # only map the interface if it's a style understood to be a SONiC interface.
                  if get_index(if_name) is not None}
