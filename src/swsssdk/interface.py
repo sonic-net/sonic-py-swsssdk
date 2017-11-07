@@ -111,7 +111,7 @@ class DBInterface(object):
     Time to wait for any given message to arrive via pub-sub.
     """
 
-    PUB_SUB_MAXIMUM_DATA_WAIT = 30.0  # seconds
+    PUB_SUB_MAXIMUM_DATA_WAIT = 60.0  # seconds
     """
     Maximum allowable time to wait on a specific pub-sub notification.
     """
