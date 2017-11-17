@@ -155,7 +155,12 @@ class ConfigDBConnector(SonicV2Connector):
         if data == None:
             client.delete(_hash)
         else:
+            original = self.get_entry(table, key)
             client.hmset(_hash, self.__typed_to_raw(data))
+            for k in [ k for k in original.keys() if k not in data.keys() ]:
+                if type(original[k]) == list:
+                    k = k + '@'
+                client.hdel(_hash, self.serialize_key(k))
 
     def get_entry(self, table, key):
         """Read a table entry from config db.
