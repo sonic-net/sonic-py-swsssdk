@@ -28,9 +28,11 @@ class ConfigDBConnector(SonicV2Connector):
     TABLE_NAME_SEPARATOR = '|'
     KEY_SEPARATOR = '|'
 
-    def __init__(self):
-        # Connect to Redis through TCP, which does not requires root.
-        super(ConfigDBConnector, self).__init__(host='127.0.0.1')
+    def __init__(self, **kwargs):
+        # By default, connect to Redis through TCP, which does not requires root.
+        if len(kwargs) == 0:
+            kwargs['host'] = '127.0.0.1'
+        super(ConfigDBConnector, self).__init__(**kwargs)
         self.handlers = {}
 
     def __wait_for_db_init(self):
