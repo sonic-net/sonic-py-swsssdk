@@ -222,7 +222,7 @@ class ConfigDBConnector(SonicV2Connector):
 
     def mod_config(self, data):
         """Write multiple tables into config db.
-           Extra entries/attributes in the db which are not in the data are kept.
+           Extra entries/fields in the db which are not in the data are kept.
         Args:
             data: config data in a dictionary form
             { 
