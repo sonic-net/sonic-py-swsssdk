@@ -144,7 +144,7 @@ class ConfigDBConnector(SonicV2Connector):
 
     def set_entry(self, table, key, data):
         """Write a table entry to config db.
-           Remove all fields in the db which are not in the data.
+           Remove extra fields in the db which are not in the data.
         Args:
             table: Table name.
             key: Key of table entry, or a tuple of keys if it is a multi-key table.
@@ -221,7 +221,8 @@ class ConfigDBConnector(SonicV2Connector):
         return data
 
     def mod_config(self, data):
-        """Write multiple tables into config db. Existing entries in the db are kept.
+        """Write multiple tables into config db.
+           Extra entries/attributes in the db which are not in the data are kept.
         Args:
             data: config data in a dictionary form
             { 
