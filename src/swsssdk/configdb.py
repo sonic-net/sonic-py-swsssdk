@@ -5,7 +5,7 @@ Example:
     # Write to config DB
     config_db = ConfigDBConnector()
     config_db.connect()
-    config_db.set_entry('BGP_NEIGHBOR', '10.0.0.1', {
+    config_db.mod_entry('BGP_NEIGHBOR', '10.0.0.1', {
         'admin_status': state
         })
 
@@ -144,6 +144,7 @@ class ConfigDBConnector(SonicV2Connector):
 
     def set_entry(self, table, key, data):
         """Write a table entry to config db.
+           Remove all fields in the db which are not in the data.
         Args:
             table: Table name.
             key: Key of table entry, or a tuple of keys if it is a multi-key table.
@@ -163,6 +164,23 @@ class ConfigDBConnector(SonicV2Connector):
                 if type(original[k]) == list:
                     k = k + '@'
                 client.hdel(_hash, self.serialize_key(k))
+
+    def mod_entry(self, table, key, data):
+        """Modify a table entry to config db.
+        Args:
+            table: Table name.
+            key: Key of table entry, or a tuple of keys if it is a multi-key table.
+            data: Table row data in a form of dictionary {'column_key': 'value', ...}.
+                  Pass {} as data will create an entry with no column if not already existed.
+                  Pass None as data will delete the entry.
+        """
+        key = self.serialize_key(key)
+        client = self.redis_clients[self.CONFIG_DB]
+        _hash = '{}{}{}'.format(table.upper(), self.TABLE_NAME_SEPARATOR, key)
+        if data == None:
+            client.delete(_hash)
+        else:
+            client.hmset(_hash, self.__typed_to_raw(data))
 
     def get_entry(self, table, key):
         """Read a table entry from config db.
@@ -202,8 +220,8 @@ class ConfigDBConnector(SonicV2Connector):
                 pass    #Ignore non table-formated redis entries
         return data
 
-    def set_config(self, data):
-        """Write multiple tables into config db. 
+    def mod_config(self, data):
+        """Write multiple tables into config db. Existing entries in the db are kept.
         Args:
             data: config data in a dictionary form
             { 
@@ -215,7 +233,7 @@ class ConfigDBConnector(SonicV2Connector):
         for table_name in data:
             table_data = data[table_name]
             for key in table_data:
-                self.set_entry(table_name, key, table_data[key])
+                self.mod_entry(table_name, key, table_data[key])
 
     def get_config(self):
         """Read all config data. 
