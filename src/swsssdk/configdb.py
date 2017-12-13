@@ -17,10 +17,11 @@ Example:
     config_db.listen()
 
 """
-
 import sys
 import time
 from .dbconnector import SonicV2Connector
+
+PY3K = sys.version_info >= (3, 0)
 
 class ConfigDBConnector(SonicV2Connector):
 
@@ -101,16 +102,28 @@ class ConfigDBConnector(SonicV2Connector):
         if raw_data == None:
             return None
         typed_data = {}
-        for key in raw_data:
+        for raw_key in raw_data:
+            key = raw_key
+            if PY3K:
+                key = raw_key.decode('utf-8')
+
             # "NULL:NULL" is used as a placeholder for objects with no attributes
             if key == "NULL":
                 pass
             # A column key with ending '@' is used to mark list-typed table items
             # TODO: Replace this with a schema-based typing mechanism.
             elif key.endswith("@"):
-                typed_data[key[:-1]] = raw_data[key].split(',')
+                value = ""
+                if PY3K:
+                    value = raw_data[raw_key].decode("utf-8").split(',')
+                else:
+                    value = raw_data[raw_key].split(',')
+                typed_data[key[:-1]] = value
             else:
-                typed_data[key] = raw_data[key]
+                if PY3K:
+                    typed_data[key] = raw_data[raw_key].decode('utf-8')
+                else:
+                    typed_data[key] = raw_data[raw_key]
         return typed_data
 
     def __typed_to_raw(self, typed_data):
@@ -212,10 +225,15 @@ class ConfigDBConnector(SonicV2Connector):
         data = {}
         for key in keys:
             try:
-                (_, row) = key.split(self.TABLE_NAME_SEPARATOR, 1)
                 entry = self.__raw_to_typed(client.hgetall(key))
-                if entry != None:
-                    data[self.deserialize_key(row)] = entry
+                if entry:
+                    if PY3K:
+                        key = key.decode('utf-8')
+                        (_, row) = key.split(self.TABLE_NAME_SEPARATOR, 1)
+                        data[self.deserialize_key(row)] = entry
+                    else:
+                        (_, row) = key.split(self.TABLE_NAME_SEPARATOR, 1)
+                        data[self.deserialize_key(row)] = entry
             except ValueError:
                 pass    #Ignore non table-formated redis entries
         return data
