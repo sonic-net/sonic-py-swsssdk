@@ -22,6 +22,9 @@
       },
       "CONFIG_DB": {
         "db": 4
+      },
+      "STATE_DB": {
+        "db": 6
       }
     }
   }
