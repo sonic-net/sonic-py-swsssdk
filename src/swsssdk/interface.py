@@ -254,6 +254,13 @@ class DBInterface(object):
         """
         return self.redis_clients[db_name]
 
+    def publish(self, db_name, channel, message):
+        """
+        Publish message via the channel
+        """
+        client  = self.redis_clients[db_name]
+        return client.publish(channel, message)
+
     @blockable
     def keys(self, db_name, pattern='*'):
         """
