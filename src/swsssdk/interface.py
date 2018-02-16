@@ -321,6 +321,26 @@ class DBInterface(object):
         client = self.redis_clients[db_name]
         return client.hset(_hash, key, val)
 
+    @blockable
+    def delete(self, db_name, key):
+        """
+        Delete %key from DB %db_name
+        Parameter %blocking indicates whether to retry in case of failure
+        """
+        client = self.redis_clients[db_name]
+        return client.delete(key)
+
+    @blockable
+    def delete_all_by_pattern(self, db_name, pattern):
+        """
+        Delete all keys which match %pattern from DB %db_name
+        Parameter %blocking indicates whether to retry in case of failure
+        """
+        client = self.redis_clients[db_name]
+        keys = client.keys(pattern)
+        for key in keys:
+            client.delete(key)
+
     def _unavailable_data_handler(self, db_name, data):
         """
         When the queried config is not available in Redis--wait until it is available.
