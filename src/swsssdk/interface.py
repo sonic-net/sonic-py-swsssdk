@@ -261,6 +261,20 @@ class DBInterface(object):
         client  = self.redis_clients[db_name]
         return client.publish(channel, message)
 
+    def expire(self, db_name, key, timeout_sec):
+        """
+        Set a timeout on a key
+        """
+        client = self.redis_clients[db_name]
+        return client.expire(key, timeout_sec)
+
+    def exists(self, db_name, key):
+        """
+        Check if a key exist in the db
+        """
+        client = self.redis_clients[db_name]
+        return client.exists(key)
+
     @blockable
     def keys(self, db_name, pattern='*'):
         """
