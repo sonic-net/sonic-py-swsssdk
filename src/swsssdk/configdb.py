@@ -20,6 +20,7 @@ Example:
 import sys
 import time
 from .dbconnector import SonicV2Connector
+import os
 
 PY3K = sys.version_info >= (3, 0)
 
@@ -28,8 +29,20 @@ class ConfigDBConnector(SonicV2Connector):
     INIT_INDICATOR = 'CONFIG_DB_INITIALIZED'
     TABLE_NAME_SEPARATOR = '|'
     KEY_SEPARATOR = '|'
+    SONIC_CONFIG_DB_HOST   = ['SONIC_CONFIG_DB_HOST', 'host']
+    SONIC_CONFIG_DB_PORT   = ['SONIC_CONFIG_DB_PORT', 'port']
+    SONIC_CONFIG_DB_SOCKET = ['SONIC_CONFIG_DB_SOCKET', 'unix_socket_path']
 
     def __init__(self, **kwargs):
+
+        def _set(key):
+            value = os.environ.get(key[0])
+            if value:
+                kwargs[key[1]] = value
+
+        _set(self.SONIC_CONFIG_DB_HOST)
+        _set(self.SONIC_CONFIG_DB_PORT)
+        _set(self.SONIC_CONFIG_DB_SOCKET)
         # By default, connect to Redis through TCP, which does not requires root.
         if len(kwargs) == 0:
             kwargs['host'] = '127.0.0.1'
