@@ -1,5 +1,6 @@
 import time
 from functools import wraps
+import os
 
 import redis
 from redis import RedisError
@@ -80,18 +81,21 @@ class DBRegistry(dict):
 
 
 class DBInterface(object):
-    REDIS_HOST = '127.0.0.1'
+    REDIS_HOST = ['REDIS_HOST', 'host']
+    REDIS_DEFAULT_HOST = '127.0.0.1'
     """
     SONiC does not use a password-protected database. By default, Redis will only allow connections to unprotected
     DBs over the loopback ip.
     """
 
-    REDIS_PORT = 6379
+    REDIS_PORT = ['REDIS_PORT', 'port']
+    REDIS_DEFAULT_PORT = 6379
     """
     SONiC uses the default port.
     """
 
-    REDIS_UNIX_SOCKET_PATH = "/var/run/redis/redis.sock"
+    REDIS_UNIX_SOCKET_PATH = ['REDIS_UNIX_SOCKET_PATH', 'unix_socket_path']
+    REDIS_DEFAULT_UNIX_SOCKET_PATH = "/var/run/redis/redis.sock"
     """
     SONiC uses the default unix socket.
     """
@@ -149,9 +153,18 @@ class DBInterface(object):
         super(DBInterface, self).__init__()
 
         # Store the arguments for redis client
+        def _set(key):
+            value = os.environ.get(key[0])
+            if value:
+                kwargs[key[1]] = value
+
+        _set(self.REDIS_HOST)
+        _set(self.REDIS_PORT)
+        _set(self.REDIS_UNIX_SOCKET_PATH)
+
         self.redis_kwargs = kwargs
         if len(self.redis_kwargs) == 0:
-            self.redis_kwargs['unix_socket_path'] = self.REDIS_UNIX_SOCKET_PATH
+            self.redis_kwargs[self.REDIS_HOST[1]] = self.REDIS_DEFAULT_HOST
 
         # For thread safety as recommended by python-redis
         # Create a separate client for each database
