@@ -3,9 +3,16 @@ Bridge/Port mapping utility library.
 """
 import swsssdk
 import re
+from enum import Enum
+
 
 SONIC_ETHERNET_RE_PATTERN = "^Ethernet(\d+)$"
 SONIC_PORTCHANNEL_RE_PATTERN = "^PortChannel(\d+)$"
+
+
+class BaseIdx(int, Enum):
+    ethernet_base_idx = 1
+    portchannel_base_idx = 1000
 
 def get_index(if_name):
     """
@@ -23,8 +30,8 @@ def get_index_from_str(if_name):
     PortChannel N = N + 1000
     """
     patterns = {
-        SONIC_ETHERNET_RE_PATTERN: 1,
-        SONIC_PORTCHANNEL_RE_PATTERN: 1000
+        SONIC_ETHERNET_RE_PATTERN: BaseIdx.ethernet_base_idx,
+        SONIC_PORTCHANNEL_RE_PATTERN: BaseIdx.portchannel_base_idx
     }
 
     for pattern, baseidx in patterns.items():
