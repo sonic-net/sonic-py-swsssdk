@@ -226,7 +226,7 @@ class ConfigDBConnector(SonicV2Connector):
         for key in keys:
             try:
                 entry = self.__raw_to_typed(client.hgetall(key))
-                if entry:
+                if entry != None:
                     if PY3K:
                         key = key.decode('utf-8')
                         (_, row) = key.split(self.TABLE_NAME_SEPARATOR, 1)
