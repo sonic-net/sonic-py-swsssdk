@@ -8,17 +8,20 @@ from enum import Enum
 
 SONIC_ETHERNET_RE_PATTERN = "^Ethernet(\d+)$"
 SONIC_PORTCHANNEL_RE_PATTERN = "^PortChannel(\d+)$"
+SONIC_MGMT_PORT_RE_PATTERN = "^eth(\d+)$"
 
 
 class BaseIdx(int, Enum):
     ethernet_base_idx = 1
     portchannel_base_idx = 1000
+    mgmt_port_base_idx = 10000
 
 def get_index(if_name):
     """
     OIDs are 1-based, interfaces are 0-based, return the 1-based index
     Ethernet N = N + 1
     PortChannel N = N + 1000
+    eth N = N + 10000
     """
     return get_index_from_str(if_name.decode())
 
@@ -28,10 +31,12 @@ def get_index_from_str(if_name):
     OIDs are 1-based, interfaces are 0-based, return the 1-based index
     Ethernet N = N + 1
     PortChannel N = N + 1000
+    eth N = N + 10000
     """
     patterns = {
         SONIC_ETHERNET_RE_PATTERN: BaseIdx.ethernet_base_idx,
-        SONIC_PORTCHANNEL_RE_PATTERN: BaseIdx.portchannel_base_idx
+        SONIC_PORTCHANNEL_RE_PATTERN: BaseIdx.portchannel_base_idx,
+        SONIC_MGMT_PORT_RE_PATTERN: BaseIdx.mgmt_port_base_idx
     }
 
     for pattern, baseidx in patterns.items():
