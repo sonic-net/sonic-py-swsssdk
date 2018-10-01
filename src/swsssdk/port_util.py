@@ -3,7 +3,6 @@ Bridge/Port mapping utility library.
 """
 import swsssdk
 import re
-from enum import Enum
 
 
 SONIC_ETHERNET_RE_PATTERN = "^Ethernet(\d+)$"
@@ -11,7 +10,7 @@ SONIC_PORTCHANNEL_RE_PATTERN = "^PortChannel(\d+)$"
 SONIC_MGMT_PORT_RE_PATTERN = "^eth(\d+)$"
 
 
-class BaseIdx(int, Enum):
+class BaseIdx:
     ethernet_base_idx = 1
     portchannel_base_idx = 1000
     mgmt_port_base_idx = 10000
