@@ -134,10 +134,11 @@ class ConfigDBConnector(SonicV2Connector):
         raw_data = {}
         for key in typed_data:
             value = typed_data[key]
-            if type(value) is list:
-                raw_data[key+'@'] = ','.join(value)
-            else:
-                raw_data[key] = value
+            if value is not None:
+                if type(value) is list:
+                    raw_data[key+'@'] = ','.join(value)
+                else:
+                    raw_data[key] = value
         return raw_data
 
     @staticmethod
