@@ -98,6 +98,32 @@ class ConfigDBConnector(SonicV2Connector):
                 except ValueError:
                     pass    #Ignore non table-formated redis entries
 
+    def __fire_with_op(self, table, key, data, op_str='add'):
+        if self.handlers.has_key(table):
+            handler = self.handlers[table]
+            handler(table, key, data, op_str)
+
+    def listen_with_op(self):
+        """Start listen Redis keyspace events and will trigger corresponding handlers when content of a table changes.
+        """
+        self.pubsub = self.redis_clients[self.CONFIG_DB].pubsub()
+        self.pubsub.psubscribe("__keyspace@{}__:*".format(self.db_map[self.CONFIG_DB]['db']))
+        for item in self.pubsub.listen():
+            if item['type'] == 'pmessage':
+                key = item['channel'].split(':', 1)[1]
+                try:
+                    (table, row) = key.split(self.TABLE_NAME_SEPARATOR, 1)
+                    if self.handlers.has_key(table):
+                        client = self.redis_clients[self.CONFIG_DB]
+                        data = self.__raw_to_typed(client.hgetall(key))
+                        op = client.keys(key)
+                        op_str = 'add'
+                        if len(op) == 0:
+                            op_str = 'del'
+                        self.__fire_with_op(table, row, data, op_str)
+                except ValueError:
+                    pass    #Ignore non table-formated redis entries
+
     def __raw_to_typed(self, raw_data):
         if raw_data == None:
             return None
