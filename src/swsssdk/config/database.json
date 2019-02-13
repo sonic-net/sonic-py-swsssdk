@@ -25,6 +25,9 @@
       },
       "STATE_DB": {
         "db": 6
+      },
+      "SNMP_OVERLAY_DB": {
+        "db": 7
       }
     }
   }
