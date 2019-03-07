@@ -37,11 +37,11 @@ class ConfigDBConnector(SonicV2Connector):
         self.handlers = {}
 
     def __wait_for_db_init(self):
-        client = self.redis_clients[self.CONFIG_DB]
+        client = self.redis_clients[self.db_name]
         pubsub = client.pubsub()
         initialized = client.get(self.INIT_INDICATOR)
         if not initialized:
-            pattern = "__keyspace@{}__:{}".format(self.db_map[self.CONFIG_DB]['db'], self.INIT_INDICATOR)
+            pattern = "__keyspace@{}__:{}".format(self.db_map[self.db_name]['db'], self.INIT_INDICATOR)
             pubsub.psubscribe(pattern)
             for item in pubsub.listen():
                 if item['type'] == 'pmessage':
@@ -53,10 +53,15 @@ class ConfigDBConnector(SonicV2Connector):
             pubsub.punsubscribe(pattern)
 
 
-    def connect(self, wait_for_init=True, retry_on=False):
-        SonicV2Connector.connect(self, self.CONFIG_DB, retry_on)
+    def db_connect(self, dbname, wait_for_init=False, retry_on=False):
+        self.db_name = dbname
+        self.KEY_SEPARATOR = self.TABLE_NAME_SEPARATOR = self.db_map[self.db_name]['separator']
+        SonicV2Connector.connect(self, self.db_name, retry_on)
         if wait_for_init:
             self.__wait_for_db_init()
+
+    def connect(self, wait_for_init=True, retry_on=False):
+        self.db_connect('CONFIG_DB', wait_for_init, retry_on)
 
     def subscribe(self, table, handler):
         """Set a handler to handle config change in certain table.
@@ -84,15 +89,15 @@ class ConfigDBConnector(SonicV2Connector):
     def listen(self):
         """Start listen Redis keyspace events and will trigger corresponding handlers when content of a table changes.
         """
-        self.pubsub = self.redis_clients[self.CONFIG_DB].pubsub()
-        self.pubsub.psubscribe("__keyspace@{}__:*".format(self.db_map[self.CONFIG_DB]['db']))
+        self.pubsub = self.redis_clients[self.db_name].pubsub()
+        self.pubsub.psubscribe("__keyspace@{}__:*".format(self.db_map[self.db_name]['db']))
         for item in self.pubsub.listen():
             if item['type'] == 'pmessage':
                 key = item['channel'].split(':', 1)[1]
                 try:
                     (table, row) = key.split(self.TABLE_NAME_SEPARATOR, 1)
                     if self.handlers.has_key(table):
-                        client = self.redis_clients[self.CONFIG_DB]
+                        client = self.redis_clients[self.db_name]
                         data = self.__raw_to_typed(client.hgetall(key))
                         self.__fire(table, row, data)
                 except ValueError:
@@ -166,7 +171,7 @@ class ConfigDBConnector(SonicV2Connector):
                   Pass None as data will delete the entry.
         """
         key = self.serialize_key(key)
-        client = self.redis_clients[self.CONFIG_DB]
+        client = self.redis_clients[self.db_name]
         _hash = '{}{}{}'.format(table.upper(), self.TABLE_NAME_SEPARATOR, key)
         if data == None:
             client.delete(_hash)
@@ -188,7 +193,7 @@ class ConfigDBConnector(SonicV2Connector):
                   Pass None as data will delete the entry.
         """
         key = self.serialize_key(key)
-        client = self.redis_clients[self.CONFIG_DB]
+        client = self.redis_clients[self.db_name]
         _hash = '{}{}{}'.format(table.upper(), self.TABLE_NAME_SEPARATOR, key)
         if data == None:
             client.delete(_hash)
@@ -205,9 +210,35 @@ class ConfigDBConnector(SonicV2Connector):
             Empty dictionary if table does not exist or entry does not exist.
         """
         key = self.serialize_key(key)
-        client = self.redis_clients[self.CONFIG_DB]
+        client = self.redis_clients[self.db_name]
         _hash = '{}{}{}'.format(table.upper(), self.TABLE_NAME_SEPARATOR, key)
         return self.__raw_to_typed(client.hgetall(_hash))
+
+    def get_keys(self, table, split=True):
+        """Read all keys of a table from config db.
+        Args:
+            table: Table name.
+            split: split the first part and return second.
+                   Useful for keys with two parts <tablename>:<key>
+        Returns: 
+            List of keys.
+        """
+        client = self.redis_clients[self.db_name]
+        pattern = '{}{}*'.format(table.upper(), self.TABLE_NAME_SEPARATOR)
+        keys = client.keys(pattern)
+        data = []
+        for key in keys:
+            try:
+                if PY3K:
+                    key = key.decode('utf-8')
+                if split:
+                    (_, row) = key.split(self.TABLE_NAME_SEPARATOR, 1)
+                    data.append(self.deserialize_key(row))
+                else:
+                    data.append(self.deserialize_key(key))
+            except ValueError:
+                pass    #Ignore non table-formated redis entries
+        return data
 
     def get_table(self, table):
         """Read an entire table from config db.
@@ -219,7 +250,7 @@ class ConfigDBConnector(SonicV2Connector):
             or { ('l1_key', 'l2_key', ...): {'column_key': value, ...}, ...} for a multi-key table.
             Empty dictionary if table does not exist.
         """
-        client = self.redis_clients[self.CONFIG_DB]
+        client = self.redis_clients[self.db_name]
         pattern = '{}{}*'.format(table.upper(), self.TABLE_NAME_SEPARATOR)
         keys = client.keys(pattern)
         data = {}
@@ -243,7 +274,7 @@ class ConfigDBConnector(SonicV2Connector):
         Args:
             table: Table name.
         """
-        client = self.redis_clients[self.CONFIG_DB]
+        client = self.redis_clients[self.db_name]
         pattern = '{}{}*'.format(table.upper(), self.TABLE_NAME_SEPARATOR)
         keys = client.keys(pattern)
         data = {}
@@ -276,7 +307,7 @@ class ConfigDBConnector(SonicV2Connector):
                 ...
             }
         """
-        client = self.redis_clients[self.CONFIG_DB]
+        client = self.redis_clients[self.db_name]
         keys = client.keys('*')
         data = {}
         for key in keys:
