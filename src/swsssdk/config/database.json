@@ -1,16 +1,4 @@
 {
-  "SonicV1Connector": {
-    "db_map": {
-      "IF_COUNTER_DB": {
-        "db": 0,
-        "separator": ":"
-      },
-      "LLDP_COUNTER_DB": {
-        "db": 1,
-        "separator": ":"
-      }
-    }
-  },
   "SonicV2Connector": {
     "db_map": {
       "APPL_DB": {

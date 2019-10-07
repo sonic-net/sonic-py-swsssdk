@@ -16,13 +16,13 @@ def blockable(f):
     "blocking" decorator for Redis accessor methods. Wrapped functions that specify kwarg 'blocking'
     will wait for the specified accessor to return with data.::
 
-        class SonicV1Connector:
+        class SonicV2Connector:
             @blockable
             def keys(self, db_name):
                 # ...
 
         # call with:
-        db = SonicV1Connector()
+        db = SonicV2Connector()
         # ...
         db.keys('DATABASE', blocking=True)
 

@@ -14,8 +14,6 @@ class Test_load_connector_map(TestCase):
 
     def test__db_map_attributes(self):
         import swsssdk
-        db1 = swsssdk.SonicV1Connector()
-        self.assertTrue(all(hasattr(db1, db_name) for db_name in db1.db_map))
         db2 = swsssdk.SonicV2Connector()
         self.assertTrue(all(hasattr(db2, db_name) for db_name in db2.db_map))
         pass
