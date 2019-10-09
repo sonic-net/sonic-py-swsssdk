@@ -37,11 +37,11 @@ class ConfigDBConnector(SonicV2Connector):
         self.handlers = {}
 
     def __wait_for_db_init(self):
-        client = self.redis_clients[self.db_name]
+        client = self.get_redis_client(self.db_name)
         pubsub = client.pubsub()
         initialized = client.get(self.INIT_INDICATOR)
         if not initialized:
-            pattern = "__keyspace@{}__:{}".format(self.db_map[self.db_name]['db'], self.INIT_INDICATOR)
+            pattern = "__keyspace@{}__:{}".format(self.get_dbid(self.db_name), self.INIT_INDICATOR)
             pubsub.psubscribe(pattern)
             for item in pubsub.listen():
                 if item['type'] == 'pmessage':
@@ -55,7 +55,7 @@ class ConfigDBConnector(SonicV2Connector):
 
     def db_connect(self, dbname, wait_for_init=False, retry_on=False):
         self.db_name = dbname
-        self.KEY_SEPARATOR = self.TABLE_NAME_SEPARATOR = self.db_map[self.db_name]['separator']
+        self.KEY_SEPARATOR = self.TABLE_NAME_SEPARATOR = self.get_db_separator(self.db_name)
         SonicV2Connector.connect(self, self.db_name, retry_on)
         if wait_for_init:
             self.__wait_for_db_init()
@@ -89,15 +89,15 @@ class ConfigDBConnector(SonicV2Connector):
     def listen(self):
         """Start listen Redis keyspace events and will trigger corresponding handlers when content of a table changes.
         """
-        self.pubsub = self.redis_clients[self.db_name].pubsub()
-        self.pubsub.psubscribe("__keyspace@{}__:*".format(self.db_map[self.db_name]['db']))
+        self.pubsub = self.get_redis_client(self.db_name).pubsub()
+        self.pubsub.psubscribe("__keyspace@{}__:*".format(self.get_dbid(self.db_name)))
         for item in self.pubsub.listen():
             if item['type'] == 'pmessage':
                 key = item['channel'].split(':', 1)[1]
                 try:
                     (table, row) = key.split(self.TABLE_NAME_SEPARATOR, 1)
                     if self.handlers.has_key(table):
-                        client = self.redis_clients[self.db_name]
+                        client = self.get_redis_client(self.db_name)
                         data = self.__raw_to_typed(client.hgetall(key))
                         self.__fire(table, row, data)
                 except ValueError:
@@ -171,7 +171,7 @@ class ConfigDBConnector(SonicV2Connector):
                   Pass None as data will delete the entry.
         """
         key = self.serialize_key(key)
-        client = self.redis_clients[self.db_name]
+        client = self.get_redis_client(self.db_name)
         _hash = '{}{}{}'.format(table.upper(), self.TABLE_NAME_SEPARATOR, key)
         if data == None:
             client.delete(_hash)
@@ -193,7 +193,7 @@ class ConfigDBConnector(SonicV2Connector):
                   Pass None as data will delete the entry.
         """
         key = self.serialize_key(key)
-        client = self.redis_clients[self.db_name]
+        client = self.get_redis_client(self.db_name)
         _hash = '{}{}{}'.format(table.upper(), self.TABLE_NAME_SEPARATOR, key)
         if data == None:
             client.delete(_hash)
@@ -210,7 +210,7 @@ class ConfigDBConnector(SonicV2Connector):
             Empty dictionary if table does not exist or entry does not exist.
         """
         key = self.serialize_key(key)
-        client = self.redis_clients[self.db_name]
+        client = self.get_redis_client(self.db_name)
         _hash = '{}{}{}'.format(table.upper(), self.TABLE_NAME_SEPARATOR, key)
         return self.__raw_to_typed(client.hgetall(_hash))
 
@@ -223,7 +223,7 @@ class ConfigDBConnector(SonicV2Connector):
         Returns: 
             List of keys.
         """
-        client = self.redis_clients[self.db_name]
+        client = self.get_redis_client(self.db_name)
         pattern = '{}{}*'.format(table.upper(), self.TABLE_NAME_SEPARATOR)
         keys = client.keys(pattern)
         data = []
@@ -250,7 +250,7 @@ class ConfigDBConnector(SonicV2Connector):
             or { ('l1_key', 'l2_key', ...): {'column_key': value, ...}, ...} for a multi-key table.
             Empty dictionary if table does not exist.
         """
-        client = self.redis_clients[self.db_name]
+        client = self.get_redis_client(self.db_name)
         pattern = '{}{}*'.format(table.upper(), self.TABLE_NAME_SEPARATOR)
         keys = client.keys(pattern)
         data = {}
@@ -274,7 +274,7 @@ class ConfigDBConnector(SonicV2Connector):
         Args:
             table: Table name.
         """
-        client = self.redis_clients[self.db_name]
+        client = self.get_redis_client(self.db_name)
         pattern = '{}{}*'.format(table.upper(), self.TABLE_NAME_SEPARATOR)
         keys = client.keys(pattern)
         data = {}
@@ -307,7 +307,7 @@ class ConfigDBConnector(SonicV2Connector):
                 ...
             }
         """
-        client = self.redis_clients[self.db_name]
+        client = self.get_redis_client(self.db_name)
         keys = client.keys('*')
         data = {}
         for key in keys:

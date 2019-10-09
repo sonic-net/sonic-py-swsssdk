@@ -18,7 +18,7 @@ def blockable(f):
 
         class SonicV2Connector:
             @blockable
-            def keys(self, db_name):
+            def keys(self, db_id):
                 # ...
 
         # call with:
@@ -29,26 +29,26 @@ def blockable(f):
     """
 
     @wraps(f)
-    def wrapped(inst, db_name, *args, **kwargs):
+    def wrapped(inst, db_id, *args, **kwargs):
 
         blocking = kwargs.pop('blocking', False)
         attempts = 0
         while True:
             try:
-                ret_data = f(inst, db_name, *args, **kwargs)
-                inst._unsubscribe_keyspace_notification(db_name)
+                ret_data = f(inst, db_id, *args, **kwargs)
+                inst._unsubscribe_keyspace_notification(db_id)
                 return ret_data
             except UnavailableDataError as e:
                 if blocking:
-                    if db_name in inst.keyspace_notification_channels:
-                        result = inst._unavailable_data_handler(db_name, e.data)
+                    if db_id in inst.keyspace_notification_channels:
+                        result = inst._unavailable_data_handler(db_id, e.data)
                         if result:
                             continue # received updates, try to read data again
                         else:
-                            inst._unsubscribe_keyspace_notification(db_name)
+                            inst._unsubscribe_keyspace_notification(db_id)
                             raise    # No updates was received. Raise exception
                     else: # Subscribe to updates and try it again (avoiding race condition)
-                        inst._subscribe_keyspace_notification(db_name)
+                        inst._subscribe_keyspace_notification(db_id)
                 else:
                     return None
             except redis.exceptions.ResponseError:
@@ -57,12 +57,12 @@ def blockable(f):
                 Retrying the request won't pass unless the schema itself changes. In this case, the error
                 should be attributed to the application itself. Re-raise the error.
                 """
-                logger.exception("Bad DB request [{}:{}]{{ {} }}".format(db_name, f.__name__, str(args)))
+                logger.exception("Bad DB request [{}:{}]{{ {} }}".format(db_id, f.__name__, str(args)))
                 raise
             except (redis.exceptions.RedisError, OSError):
                 attempts += 1
-                inst._connection_error_handler(db_name)
-                msg = "DB access failure by [{}:{}]{{ {} }}".format(db_name, f.__name__, str(args))
+                inst._connection_error_handler(db_id)
+                msg = "DB access failure by [{}:{}]{{ {} }}".format(db_id, f.__name__, str(args))
                 if BLOCKING_ATTEMPT_ERROR_THRESHOLD < attempts < BLOCKING_ATTEMPT_SUPPRESSION:
                     # Repeated access failures implies the database itself is unhealthy.
                     logger.exception(msg=msg)
@@ -75,7 +75,7 @@ def blockable(f):
 class DBRegistry(dict):
     def __getitem__(self, item):
         if item not in self:
-            raise MissingClientError("No client connected for db_name '{}'".format(item))
+            raise MissingClientError("No client connected for db_id '{}'".format(item))
         return dict.__getitem__(self, item)
 
 
@@ -142,8 +142,6 @@ class DBInterface(object):
     ACS Redis db mainly uses hash, therefore h is selected.
     """
 
-    db_map = dict()
-
     def __init__(self, **kwargs):
 
         super(DBInterface, self).__init__()
@@ -161,147 +159,128 @@ class DBInterface(object):
         # notifications for each client
         self.keyspace_notification_channels = DBRegistry()
 
-        for db_name in self.db_map:
-            # set a database name as a constant value attribute.
-            setattr(self, db_name, db_name)
-
-    @property
-    def db_list(self):
-        return self.db_map.keys()
-
-    @classmethod
-    def get_dbid(cls, db_name):
+    def connect(self, db_id, retry_on=True):
         """
-        :returns the database index by name. None if the name doesn't exist.
-        """
-        try:
-            return cls.db_map[db_name]['db']
-        except (KeyError, ValueError):
-            return None
-
-    def connect(self, db_name, retry_on=True):
-        """
-        :param db_name: named database to connect to
+        :param db_id: database id to connect to
         :param retry_on: if ``True`` -- will attempt to connect continuously.
         if ``False``, only one attempt will be made.
         """
         if retry_on:
-            self._persistent_connect(db_name)
+            self._persistent_connect(db_id)
         else:
-            self._onetime_connect(db_name)
+            self._onetime_connect(db_id)
 
-    def _onetime_connect(self, db_name):
+    def _onetime_connect(self, db_id):
         """
-        Connect to named database.
+        Connect to database id.
         """
-        db_id = self.get_dbid(db_name)
         if db_id is None:
-            raise ValueError("No database ID configured for '{}'".format(db_name))
+            raise ValueError("No database ID configured for '{}'".format(db_id))
 
-        client = redis.StrictRedis(db=self.db_map[db_name]['db'], **self.redis_kwargs)
+        client = redis.StrictRedis(db=db_id, **self.redis_kwargs)
 
         # Enable the notification mechanism for keyspace events in Redis
         client.config_set('notify-keyspace-events', self.KEYSPACE_EVENTS)
-        self.redis_clients[db_name] = client
+        self.redis_clients[db_id] = client
 
-    def _persistent_connect(self, db_name):
+    def _persistent_connect(self, db_id):
         """
-        Keep reconnecting to Database 'db_name' until success
+        Keep reconnecting to Database 'db_id' until success
         """
         while True:
             try:
-                self._onetime_connect(db_name)
+                self._onetime_connect(db_id)
                 return
             except RedisError:
                 t_wait = self.CONNECT_RETRY_WAIT_TIME
-                logger.warning("Connecting to DB '{}' failed, will retry in {}s".format(db_name, t_wait))
-                self.close(db_name)
+                logger.warning("Connecting to DB '{}' failed, will retry in {}s".format(db_id, t_wait))
+                self.close(db_id)
                 time.sleep(t_wait)
 
-    def close(self, db_name):
+    def close(self, db_id):
         """
         Close all client(s) / keyspace channels.
-        :param db_name: DB to disconnect from.
+        :param db_id: DB to disconnect from.
         """
-        if db_name in self.redis_clients:
-            self.redis_clients[db_name].connection_pool.disconnect()
-        if db_name in self.keyspace_notification_channels:
-            self.keyspace_notification_channels[db_name].close()
+        if db_id in self.redis_clients:
+            self.redis_clients[db_id].connection_pool.disconnect()
+        if db_id in self.keyspace_notification_channels:
+            self.keyspace_notification_channels[db_id].close()
 
-    def _subscribe_keyspace_notification(self, db_name):
+    def _subscribe_keyspace_notification(self, db_id):
         """
         Subscribe the chosent client to keyspace event notifications
         """
         logger.debug("Subscribe to keyspace notification")
-        client = self.redis_clients[db_name]
+        client = self.redis_clients[db_id]
         pubsub = client.pubsub()
         pubsub.psubscribe(self.KEYSPACE_PATTERN)
-        self.keyspace_notification_channels[db_name] = pubsub
+        self.keyspace_notification_channels[db_id] = pubsub
 
-    def _unsubscribe_keyspace_notification(self, db_name):
+    def _unsubscribe_keyspace_notification(self, db_id):
         """
         Unsubscribe the chosent client from keyspace event notifications
         """
-        if db_name in self.keyspace_notification_channels:
+        if db_id in self.keyspace_notification_channels:
             logger.debug("Unsubscribe from keyspace notification")
-            self.keyspace_notification_channels[db_name].close()
-            del self.keyspace_notification_channels[db_name]
+            self.keyspace_notification_channels[db_id].close()
+            del self.keyspace_notification_channels[db_id]
 
-    def get_redis_client(self, db_name):
+    def get_redis_client(self, db_id):
         """
-        :param db_name: Name of the DB to query
+        :param db_id: Name of the DB to query
         :return: The Redis client instance.
         """
-        return self.redis_clients[db_name]
+        return self.redis_clients[db_id]
 
-    def publish(self, db_name, channel, message):
+    def publish(self, db_id, channel, message):
         """
         Publish message via the channel
         """
-        client  = self.redis_clients[db_name]
+        client  = self.redis_clients[db_id]
         return client.publish(channel, message)
 
-    def expire(self, db_name, key, timeout_sec):
+    def expire(self, db_id, key, timeout_sec):
         """
         Set a timeout on a key
         """
-        client = self.redis_clients[db_name]
+        client = self.redis_clients[db_id]
         return client.expire(key, timeout_sec)
 
-    def exists(self, db_name, key):
+    def exists(self, db_id, key):
         """
         Check if a key exist in the db
         """
-        client = self.redis_clients[db_name]
+        client = self.redis_clients[db_id]
         return client.exists(key)
 
     @blockable
-    def keys(self, db_name, pattern='*'):
+    def keys(self, db_id, pattern='*'):
         """
-        Retrieve all the keys of DB %db_name
+        Retrieve all the keys of DB %db_id
         """
-        client = self.redis_clients[db_name]
+        client = self.redis_clients[db_id]
         keys = client.keys(pattern=pattern)
         if not keys:
-            message = "DB '{}' is empty!".format(db_name)
+            message = "DB '{}' is empty!".format(db_id)
             logger.warning(message)
             raise UnavailableDataError(message, b'hset')
         else:
             return keys
 
     @blockable
-    def get(self, db_name, _hash, key):
+    def get(self, db_id, _hash, key):
         """
         Retrieve the value of Key %key from Hashtable %hash
-        in Database %db_name
+        in Database %db_id
 
         Parameter %blocking indicates whether to wait
         when the query fails
         """
-        client = self.redis_clients[db_name]
+        client = self.redis_clients[db_id]
         val = client.hget(_hash, key)
         if not val:
-            message = "Key '{}' field '{}' unavailable in database '{}'".format(_hash, key, db_name)
+            message = "Key '{}' field '{}' unavailable in database '{}'".format(_hash, key, db_id)
             logger.warning(message)
             raise UnavailableDataError(message, _hash)
         else:
@@ -309,17 +288,17 @@ class DBInterface(object):
             return None if val == b'None' else val
 
     @blockable
-    def get_all(self, db_name, _hash):
+    def get_all(self, db_id, _hash):
         """
-        Get Hashtable %hash from DB %db_name
+        Get Hashtable %hash from DB %db_id
 
         Parameter %blocking indicates whether to wait
         if the hashtable has not been created yet
         """
-        client = self.redis_clients[db_name]
+        client = self.redis_clients[db_id]
         table = client.hgetall(_hash)
         if not table:
-            message = "Key '{}' unavailable in database '{}'".format(_hash, db_name)
+            message = "Key '{}' unavailable in database '{}'".format(_hash, db_id)
             logger.warning(message)
             raise UnavailableDataError(message, _hash)
         else:
@@ -327,35 +306,35 @@ class DBInterface(object):
             return {k: None if v == b'None' else v for k, v in table.items()}
 
     @blockable
-    def set(self, db_name, _hash, key, val):
+    def set(self, db_id, _hash, key, val):
         """
-        Add %(key, val) to Hashtable %hash in DB %db_name
+        Add %(key, val) to Hashtable %hash in DB %db_id
         Parameter %blocking indicates whether to retry in case of failure
         """
-        client = self.redis_clients[db_name]
+        client = self.redis_clients[db_id]
         return client.hset(_hash, key, val)
 
     @blockable
-    def delete(self, db_name, key):
+    def delete(self, db_id, key):
         """
-        Delete %key from DB %db_name
+        Delete %key from DB %db_id
         Parameter %blocking indicates whether to retry in case of failure
         """
-        client = self.redis_clients[db_name]
+        client = self.redis_clients[db_id]
         return client.delete(key)
 
     @blockable
-    def delete_all_by_pattern(self, db_name, pattern):
+    def delete_all_by_pattern(self, db_id, pattern):
         """
-        Delete all keys which match %pattern from DB %db_name
+        Delete all keys which match %pattern from DB %db_id
         Parameter %blocking indicates whether to retry in case of failure
         """
-        client = self.redis_clients[db_name]
+        client = self.redis_clients[db_id]
         keys = client.keys(pattern)
         for key in keys:
             client.delete(key)
 
-    def _unavailable_data_handler(self, db_name, data):
+    def _unavailable_data_handler(self, db_id, data):
         """
         When the queried config is not available in Redis--wait until it is available.
         Two timeouts are at work here:
@@ -363,23 +342,23 @@ class DBInterface(object):
         2. Max data wait - swsssdk-specific. how long to wait for the data to populate (in absolute time)
         """
         start = time.time()
-        logger.debug("Listening on pubsub channel '{}'".format(db_name))
+        logger.debug("Listening on pubsub channel '{}'".format(db_id))
         while time.time() - start < self.PUB_SUB_MAXIMUM_DATA_WAIT:
-            msg = self.keyspace_notification_channels[db_name].get_message(timeout=self.PUB_SUB_NOTIFICATION_TIMEOUT)
+            msg = self.keyspace_notification_channels[db_id].get_message(timeout=self.PUB_SUB_NOTIFICATION_TIMEOUT)
             if msg is not None and msg.get('data') == data:
-                logger.info("'{}' acquired via pub-sub. Unblocking...".format(data, db_name))
+                logger.info("'{}' acquired via pub-sub. Unblocking...".format(data, db_id))
                 # Wait for a "settling" period before releasing the wait.
                 time.sleep(self.DATA_RETRIEVAL_WAIT_TIME)
                 return True
 
-        logger.warning("No notification for '{}' from '{}' received before timeout.".format(data, db_name))
+        logger.warning("No notification for '{}' from '{}' received before timeout.".format(data, db_id))
         return False
 
-    def _connection_error_handler(self, db_name):
+    def _connection_error_handler(self, db_id):
         """
         In the event Redis is unavailable, close existing connections, and try again.
         """
         logger.warning('Could not connect to Redis--waiting before trying again.')
-        self.close(db_name)
+        self.close(db_id)
         time.sleep(self.CONNECT_RETRY_WAIT_TIME)
-        self.connect(db_name, True)
+        self.connect(db_id, True)
