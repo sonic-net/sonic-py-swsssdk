@@ -1,0 +1,35 @@
+#!/usr/bin/python
+import os
+import sys
+import swsssdk
+import logging
+import subprocess
+import redis
+from redis import RedisError
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.addHandler(logging.NullHandler())
+
+DOCKER_EXEC_FLAGS = "i"
+
+# Determine whether stdout is on a terminal
+if os.isatty(1):
+    DOCKER_EXEC_FLAGS += "t"
+
+if len(sys.argv) < 3:
+    msg = "More than three arguments are required. 'usage: sonic-db-cli dbname rediscommands'"
+    print >> sys.stderr, msg
+    logger.error(msg)
+else:
+    try:
+        dbid = swsssdk.SonicDBConfig.get_dbid(sys.argv[1])
+        dbhostname = swsssdk.SonicDBConfig.get_hostname(sys.argv[1])
+        dbport = swsssdk.SonicDBConfig.get_port(sys.argv[1])
+    except RuntimeError:
+        msg = "Invalid database name input : '{}'".format(sys.argv[1])
+        print >> sys.stderr, msg
+        logger.error(msg)
+    else:
+        client = redis.StrictRedis(db=dbid, host=dbhostname, port=dbport)
+        print client.execute_command(" ".join(sys.argv[2:]))
