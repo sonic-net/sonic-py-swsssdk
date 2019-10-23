@@ -1,11 +1,7 @@
 #!/usr/bin/python
-import os
 import sys
 import swsssdk
 import logging
-import subprocess
-import redis
-from redis import RedisError
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
