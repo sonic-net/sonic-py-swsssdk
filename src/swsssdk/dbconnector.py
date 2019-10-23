@@ -103,7 +103,7 @@ class SonicDBConfig(object):
         return SonicDBConfig._sonic_db_config["DATABASES"][db_name]["separator"]
 
 class SonicV2Connector(DBInterface):
-    def __init__(self, use_unix_socket_path=True, **kwargs):
+    def __init__(self, use_unix_socket_path=False, **kwargs):
         super(SonicV2Connector, self).__init__(**kwargs)
         self.use_unix_socket_path = use_unix_socket_path
         for db_name in self.get_db_list():
