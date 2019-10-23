@@ -111,7 +111,7 @@ class SonicV2Connector(DBInterface):
             setattr(self, db_name, db_name)
 
     def connect(self, db_name, retry_on=True):
-        if self.use_unix_socket_path == False:
+        if self.use_unix_socket_path:
             self.redis_kwargs["unix_socket_path"] = self.get_db_socket(db_name)
             self.redis_kwargs["host"] = None
             self.redis_kwargs["port"] = None
