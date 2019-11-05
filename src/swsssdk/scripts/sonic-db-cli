@@ -1,11 +1,6 @@
 #!/usr/bin/python
 import sys
 import swsssdk
-import logging
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-logger.addHandler(logging.NullHandler())
 
 argc = len(sys.argv)
 if argc == 2 and sys.argv[1] == '-h':
@@ -13,9 +8,8 @@ if argc == 2 and sys.argv[1] == '-h':
     print "Example 2: sonic-db-cli APPL_DB HGETALL VLAN_TABLE:Vlan10"
     print "Example 3: sonic-db-cli APPL_DB HGET VLAN_TABLE:Vlan10 mtu"
 elif argc < 3:
-    msg = "'Usage: sonic-db-cli <db_name> <cmd> [cmd [arg [arg ...]]]'. See 'sonic-db-cli -h' for detail example."
+    msg = "'Usage: sonic-db-cli <db_name> <cmd> [arg [arg ...]]'. See 'sonic-db-cli -h' for detail examples."
     print >> sys.stderr, msg
-    logger.error(msg)
 else:
     dbname = sys.argv[1]
     dbconn = swsssdk.SonicV2Connector(use_unix_socket_path=False)
@@ -24,7 +18,6 @@ else:
     except RuntimeError:
         msg = "Invalid database name input : '{}'".format(sys.argv[1])
         print >> sys.stderr, msg
-        logger.error(msg)
     else:
         client = dbconn.get_redis_client(dbname)
         print client.execute_command(" ".join(sys.argv[2:]))
