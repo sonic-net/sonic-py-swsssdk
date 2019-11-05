@@ -7,8 +7,13 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.NullHandler())
 
-if len(sys.argv) < 3:
-    msg = "More than three arguments are required. 'usage: sonic-db-cli dbname rediscommands'"
+argc = len(sys.argv)
+if argc == 2 and sys.argv[1] == '-h':
+    print "Example 1: sonic-db-cli CONFIG_DB keys *"
+    print "Example 2: sonic-db-cli APPL_DB HGETALL VLAN_TABLE:Vlan10"
+    print "Example 3: sonic-db-cli APPL_DB HGET VLAN_TABLE:Vlan10 mtu"
+elif argc < 3:
+    msg = "'Usage: sonic-db-cli <db_name> <cmd> [cmd [arg [arg ...]]]'. See 'sonic-db-cli -h' for detail example."
     print >> sys.stderr, msg
     logger.error(msg)
 else:
