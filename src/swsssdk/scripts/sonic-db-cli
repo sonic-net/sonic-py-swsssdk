@@ -12,6 +12,7 @@ elif argc < 3:
     print >> sys.stderr, msg
 else:
     dbname = sys.argv[1]
+    op = sys.argv[2]
     dbconn = swsssdk.SonicV2Connector(use_unix_socket_path=False)
     try:
         dbconn.connect(dbname)
@@ -20,4 +21,10 @@ else:
         print >> sys.stderr, msg
     else:
         client = dbconn.get_redis_client(dbname)
-        print client.execute_command(" ".join(sys.argv[2:]))
+        if op == 'EVAL':
+            lua_script = sys.argv[3]
+            numkeys = sys.argv[4]
+            keys_args = [] if numkeys == 0 else sys.argv[5:]
+            print client.execute_command(op, lua_script, numkeys, *keys_args)
+        else:
+            print client.execute_command(" ".join(sys.argv[2:]))
