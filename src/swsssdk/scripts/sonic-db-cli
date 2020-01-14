@@ -24,4 +24,10 @@ else:
     else:
         client = dbconn.get_redis_client(dbname)
         args = sys.argv[2:]
-        print client.execute_command(*args)
+        resp = client.execute_command(*args)
+        if resp is None:
+            print ""
+        elif type(resp) is list:
+            print " ".join(resp)
+        else:
+            print resp
