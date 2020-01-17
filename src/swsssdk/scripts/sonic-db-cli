@@ -33,6 +33,6 @@ else:
         if resp is None:
             print ""
         elif isinstance(resp, list):
-            print " ".join(resp)
+            print "\n".join(resp)
         else:
             print resp
