@@ -294,6 +294,9 @@ class ConfigDBConnector(SonicV2Connector):
         """
         for table_name in data:
             table_data = data[table_name]
+            if table_data == None:
+                self.delete_table(table_name)
+                continue
             for key in table_data:
                 self.mod_entry(table_name, key, table_data[key])
 
