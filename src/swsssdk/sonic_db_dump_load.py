@@ -1,3 +1,5 @@
+## ref: https://github.com/p/redis-dump-load/blob/7bbdb1eaea0a51ed4758d3ce6ca01d497a4e7429/redisdl.py
+
 def sonic_db_dump_load():
     import optparse
     import os.path
