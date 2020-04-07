@@ -1,17 +1,43 @@
 #!/usr/bin/python
 import sys
 import swsssdk
+import redis
+import time
+import syslog
 
 argc = len(sys.argv)
-if argc == 2 and sys.argv[1] == '-h':
-    print("""
+if argc == 2:
+    op = sys.argv[1]
+    if op == '-h':
+        print("""
 Example 1: sonic-db-cli CONFIG_DB keys *
 Example 2: sonic-db-cli APPL_DB HGETALL VLAN_TABLE:Vlan10
 Example 3: sonic-db-cli APPL_DB HGET VLAN_TABLE:Vlan10 mtu
 Example 4: sonic-db-cli APPL_DB EVAL "return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}" 2 k1 k2 v1 v2
+Example 4: sonic-db-cli PING
 """)
-elif argc < 3:
-    msg = "'Usage: sonic-db-cli <db_name> <cmd> [arg [arg ...]]'. See 'sonic-db-cli -h' for detail examples."
+        sys.exit(0)
+    elif op == 'PING':
+        db_insts = swsssdk.SonicDBConfig.get_instance_list()
+        # ping all redis instances one by one
+        for inst in db_insts:
+            inst_hostname = db_insts[inst]['hostname']
+            inst_port = db_insts[inst]['port']
+            r = redis.Redis(host=inst_hostname, port=inst_port)
+            rsp = False
+            while not rsp:
+                try:
+                    rsp = r.ping()
+                except redis.exceptions.ConnectionError as e:
+                    syslog.syslog(syslog.LOG_ERR, 'ping redis instance {} failed'.format(inst))
+                    time.sleep(1)
+        sys.exit(0)
+#   TODO next PR will support 'SAVE' and 'FLUSHALL'
+#   elif op == 'SAVE':
+#   elif op == 'FLUSHALL':
+
+if argc < 3:
+    msg = "'Usage: sonic-db-cli [PING | <db_name> <cmd> [arg [arg ...]]]'. See 'sonic-db-cli -h' for detail examples."
     print >> sys.stderr, msg
 else:
     dbname = sys.argv[1]
