@@ -68,7 +68,7 @@ class SonicDBConfig(object):
         return SonicDBConfig._sonic_db_config["INSTANCES"][inst_name]
 
     @staticmethod
-    def get_instance_list():
+    def get_instancelist():
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         return SonicDBConfig._sonic_db_config["INSTANCES"]
