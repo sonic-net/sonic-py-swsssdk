@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from __future__ import print_function
 import sys
 import swsssdk
 
@@ -12,7 +13,7 @@ Example 4: sonic-db-cli APPL_DB EVAL "return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}" 
 """)
 elif argc < 3:
     msg = "'Usage: sonic-db-cli <db_name> <cmd> [arg [arg ...]]'. See 'sonic-db-cli -h' for detail examples."
-    print >> sys.stderr, msg
+    print (msg, file=sys.stderr)
 else:
     dbname = sys.argv[1]
     dbconn = swsssdk.SonicV2Connector(use_unix_socket_path=False)
@@ -20,7 +21,7 @@ else:
         dbconn.connect(dbname)
     except RuntimeError:
         msg = "Invalid database name input : '{}'".format(sys.argv[1])
-        print >> sys.stderr, msg
+        print (msg, file=sys.stderr)
     else:
         client = dbconn.get_redis_client(dbname)
         args = sys.argv[2:]
@@ -31,8 +32,8 @@ else:
         with these changes, it is enough for us to mimic redis-cli in SONiC so far since no application uses tty mode redis-cli output
         """
         if resp is None:
-            print ""
+            print ("")
         elif isinstance(resp, list):
-            print "\n".join(resp)
+            print ("\n".join(resp))
         else:
-            print resp
+            print (resp)
