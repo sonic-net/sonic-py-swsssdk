@@ -7,34 +7,23 @@ import syslog
 import argparse
 from multiprocessing import Pool
 
-
-def print_examples():
-    print("""
-'Usage: sonic-db-cli [PING | <db_name> <cmd> [arg [arg ...]]]'
-Example 1: sonic-db-cli CONFIG_DB keys *
-Example 2: sonic-db-cli APPL_DB HGETALL VLAN_TABLE:Vlan10
-Example 3: sonic-db-cli APPL_DB HGET VLAN_TABLE:Vlan10 mtu
-Example 4: sonic-db-cli APPL_DB EVAL "return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}" 2 k1 k2 v1 v2
-Example 5: sonic-db-cli PING
-""")
-
 def ping_single_instance(inst_info):
     inst_hostname = inst_info['hostname']
     inst_port = inst_info['port']
     r = redis.Redis(host=inst_hostname, port=inst_port)
     rsp = False
-    while not rsp:
-        try:
-            rsp = r.ping()
-        except redis.exceptions.ConnectionError as e:
-            syslog.syslog(syslog.LOG_ERR, 'ping redis inst failed at host {} port {}'.format(inst_hostname, inst_port))
-            time.sleep(1)
+    try:
+        rsp = r.ping()
+    except redis.exceptions.ConnectionError as e:
+        syslog.syslog(syslog.LOG_ERR, 'ping redis inst failed at host {} port {}'.format(inst_hostname, inst_port))
+    return 'PONG' if rsp else e
 
 def ping_all_instances():
     db_insts = swsssdk.SonicDBConfig.get_instancelist()
     # ping all redis instances one by one
-    p = Pool(len(db_insts.keys()))
-    p.map(ping_single_instance, [v for k, v in db_insts.items()])
+    p = Pool(len(db_insts))
+    rsps =  p.map(ping_single_instance, [v for k, v in db_insts.items()])
+    return 'PONG' if all(rsp == 'PONG' for rsp in rsps) else rsps
 
 def execute_cmd(dbname, cmd):
     dbconn = swsssdk.SonicV2Connector(use_unix_socket_path=False)
@@ -60,8 +49,16 @@ def execute_cmd(dbname, cmd):
 
 def main():
     parser = argparse.ArgumentParser(description='SONiC DB CLI',
-                         formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('db_or_op', nargs='?', type=str, help='Database name Or Unary operation')
+                                     formatter_class=argparse.RawTextHelpFormatter,
+                                     epilog=
+"""
+Example 1: sonic-db-cli CONFIG_DB keys *
+Example 2: sonic-db-cli APPL_DB HGETALL VLAN_TABLE:Vlan10
+Example 3: sonic-db-cli APPL_DB HGET VLAN_TABLE:Vlan10 mtu
+Example 4: sonic-db-cli APPL_DB EVAL "return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}" 2 k1 k2 v1 v2
+Example 5: sonic-db-cli PING
+""")
+    parser.add_argument('db_or_op', type=str, help='Database name Or Unary operation(only PING supported)')
     parser.add_argument('cmd', nargs='*', type=str, help='Command to execute in database')
 
     args = parser.parse_args()
@@ -70,16 +67,14 @@ def main():
         if args.cmd:
             execute_cmd(args.db_or_op, args.cmd)
         elif args.db_or_op == 'PING':
-            ping_all_instances()
+            print ping_all_instances()
 #       TODO next PR will support 'SAVE' and 'FLUSHALL'
 #       elif args.db_or_op == 'SAVE':
 #       elif args.db_or_op == 'FLUSHALL':
         else:
             parser.print_help()
-            print_examples()
     else:
         parser.print_help()
-        print_examples()
 
 if __name__ == "__main__":
     main()
