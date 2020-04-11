@@ -11,11 +11,13 @@ def ping_single_instance(inst_info):
     inst_port = inst_info['port']
     r = redis.Redis(host=inst_hostname, port=inst_port)
     rsp = False
+    msg = 'ping failed at host {} port {}'.format(inst_hostname, inst_port)
     try:
         rsp = r.ping()
     except redis.exceptions.ConnectionError as e:
+        msg = str(e)
         syslog.syslog(syslog.LOG_ERR, 'ping redis inst failed at host {} port {}'.format(inst_hostname, inst_port))
-    return 'PONG' if rsp else e
+    return 'PONG' if rsp else msg
 
 def ping_all_instances():
     db_insts = swsssdk.SonicDBConfig.get_instancelist()
