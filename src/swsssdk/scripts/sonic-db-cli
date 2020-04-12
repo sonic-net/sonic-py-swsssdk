@@ -24,7 +24,7 @@ def ping_all_instances():
     # ping all redis instances one by one
     p = Pool(len(db_insts))
     rsps =  p.map(ping_single_instance, [v for k, v in db_insts.items()])
-    return 'PONG' if all(rsp == 'PONG' for rsp in rsps) else rsps
+    return 'PONG' if all(rsp == 'PONG' for rsp in rsps) else 'FAILED'
 
 def execute_cmd(dbname, cmd):
     dbconn = swsssdk.SonicV2Connector(use_unix_socket_path=False)
