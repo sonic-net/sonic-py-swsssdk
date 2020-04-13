@@ -11,11 +11,10 @@ def ping_single_instance(inst_info):
     inst_port = inst_info['port']
     r = redis.Redis(host=inst_hostname, port=inst_port)
     rsp = False
-    msg = 'ping failed at host {} port {}'.format(inst_hostname, inst_port)
+    msg = 'Could not connect to Redis at {}:{}: Connection refused'.format(inst_hostname, inst_port)
     try:
         rsp = r.ping()
     except redis.exceptions.ConnectionError as e:
-        msg = str(e)
         syslog.syslog(syslog.LOG_ERR, 'ping redis inst failed at host {} port {}'.format(inst_hostname, inst_port))
     return 'PONG' if rsp else msg
 
@@ -24,7 +23,16 @@ def ping_all_instances():
     # ping all redis instances one by one
     p = Pool(len(db_insts))
     rsps =  p.map(ping_single_instance, [v for k, v in db_insts.items()])
-    return 'PONG' if all(rsp == 'PONG' for rsp in rsps) else 'FAILED'
+    msg = []
+    for rsp in rsps:
+        if rsp != 'PONG':
+            msg.append(rsp)
+    if msg:
+        print '\n'.join(msg)
+        sys.exit(1)
+    else:
+        print 'PONG'
+        sys.exit(0)
 
 def execute_cmd(dbname, cmd):
     dbconn = swsssdk.SonicV2Connector(use_unix_socket_path=False)
@@ -33,6 +41,7 @@ def execute_cmd(dbname, cmd):
     except RuntimeError:
         msg = "Invalid database name input : '{}'".format(dbname)
         print >> sys.stderr, msg
+        sys.exit(1)
     else:
         client = dbconn.get_redis_client(dbname)
         resp = client.execute_command(*cmd)
@@ -47,6 +56,7 @@ def execute_cmd(dbname, cmd):
             print "\n".join(resp)
         else:
             print resp
+        sys.exit(0)
 
 def main():
     parser = argparse.ArgumentParser(description='SONiC DB CLI',
@@ -68,7 +78,7 @@ Example 5: sonic-db-cli PING
         if args.cmd:
             execute_cmd(args.db_or_op, args.cmd)
         elif args.db_or_op == 'PING':
-            print ping_all_instances()
+            ping_all_instances()
 #       TODO next PR will support 'SAVE' and 'FLUSHALL'
 #       elif args.db_or_op == 'SAVE':
 #       elif args.db_or_op == 'FLUSHALL':
