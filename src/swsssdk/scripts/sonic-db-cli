@@ -2,7 +2,6 @@
 import sys
 import swsssdk
 import redis
-import syslog
 import argparse
 from multiprocessing import Pool
 
@@ -15,12 +14,13 @@ def ping_single_instance(inst_info):
     try:
         rsp = r.ping()
     except redis.exceptions.ConnectionError as e:
-        syslog.syslog(syslog.LOG_ERR, 'ping redis inst failed at host {} port {}'.format(inst_hostname, inst_port))
+        pass
     return 'PONG' if rsp else msg
 
 def ping_all_instances():
     db_insts = swsssdk.SonicDBConfig.get_instancelist()
-    # ping all redis instances one by one
+    # ping all redis instances together
+    # TODO: if one of the ping failed, it could fail quickly and not necessary to wait all other pings
     p = Pool(len(db_insts))
     rsps =  p.map(ping_single_instance, [v for k, v in db_insts.items()])
     msg = []
