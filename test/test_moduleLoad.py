@@ -13,3 +13,27 @@ class Test_load_sonic_db_config(TestCase):
         db = swsssdk.SonicV2Connector()
         self.assertTrue(all(hasattr(db, db_name) for db_name in db.get_db_list()))
         pass
+
+    # This is the test to check if the global config file extraction of namespace is correct.
+    def test__namespace_list(self):
+        import swsssdk
+        dbConfig = swsssdk.SonicDBConfig()
+        filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../src/swsssdk/config', 'database_global.json')
+        dbConfig.load_sonic_global_db_config(global_db_file_path=filepath)
+        ns_input = ['', 'asic0', 'asic1', 'asic2']
+        ns_list = list(dbConfig.get_ns_list())
+        ns_input.sort()
+        ns_list.sort()
+        self.assertEqual(ns_input, ns_list)
+        pass
+
+    # This is the test to check if the global config file and get the correct DB in a namespace
+    def test__namespace_list(self):
+        import swsssdk
+        dbConfig = swsssdk.SonicDBConfig()
+        filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../src/swsssdk/config', 'database_global.json')
+        dbConfig.load_sonic_global_db_config(global_db_file_path=filepath)
+        for namespace in list(dbConfig.get_ns_list()):
+            self.assertEqual(dbConfig.get_dbid('PFC_WD_DB', namespace), 5)
+            self.assertEqual(dbConfig.get_dbid('APPL_DB', namespace), 0)
+        pass
