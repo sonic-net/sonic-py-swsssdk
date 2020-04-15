@@ -2,30 +2,50 @@
 from __future__ import print_function
 import sys
 import swsssdk
+import redis
+import argparse
+from multiprocessing import Pool
 
-argc = len(sys.argv)
-if argc == 2 and sys.argv[1] == '-h':
-    print("""
-Example 1: sonic-db-cli CONFIG_DB keys *
-Example 2: sonic-db-cli APPL_DB HGETALL VLAN_TABLE:Vlan10
-Example 3: sonic-db-cli APPL_DB HGET VLAN_TABLE:Vlan10 mtu
-Example 4: sonic-db-cli APPL_DB EVAL "return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}" 2 k1 k2 v1 v2
-""")
-elif argc < 3:
-    msg = "'Usage: sonic-db-cli <db_name> <cmd> [arg [arg ...]]'. See 'sonic-db-cli -h' for detail examples."
-    print (msg, file=sys.stderr)
-else:
-    dbname = sys.argv[1]
+def ping_single_instance(inst_info):
+    inst_hostname = inst_info['hostname']
+    inst_port = inst_info['port']
+    r = redis.Redis(host=inst_hostname, port=inst_port)
+    rsp = False
+    msg = 'Could not connect to Redis at {}:{}: Connection refused'.format(inst_hostname, inst_port)
+    try:
+        rsp = r.ping()
+    except redis.exceptions.ConnectionError as e:
+        pass
+    return 'PONG' if rsp else msg
+
+def ping_all_instances():
+    db_insts = swsssdk.SonicDBConfig.get_instancelist()
+    # ping all redis instances together
+    # TODO: if one of the ping failed, it could fail quickly and not necessary to wait all other pings
+    p = Pool(len(db_insts))
+    rsps =  p.map(ping_single_instance, [v for k, v in db_insts.items()])
+    msg = []
+    for rsp in rsps:
+        if rsp != 'PONG':
+            msg.append(rsp)
+    if msg:
+        print ('\n'.join(msg))
+        sys.exit(1)
+    else:
+        print 'PONG'
+        sys.exit(0)
+
+def execute_cmd(dbname, cmd):
     dbconn = swsssdk.SonicV2Connector(use_unix_socket_path=False)
     try:
         dbconn.connect(dbname)
     except RuntimeError:
-        msg = "Invalid database name input : '{}'".format(sys.argv[1])
+        msg = "Invalid database name input : '{}'".format(dbname)
         print (msg, file=sys.stderr)
+        sys.exit(1)
     else:
         client = dbconn.get_redis_client(dbname)
-        args = sys.argv[2:]
-        resp = client.execute_command(*args)
+        resp = client.execute_command(*cmd)
         """
         sonic-db-cli output format mimic the non-tty mode output format from redis-cli
         based on our usage in SONiC, None and list type output from python API needs to be modified
@@ -37,3 +57,36 @@ else:
             print ("\n".join(resp))
         else:
             print (resp)
+        sys.exit(0)
+
+def main():
+    parser = argparse.ArgumentParser(description='SONiC DB CLI',
+                                     formatter_class=argparse.RawTextHelpFormatter,
+                                     epilog=
+"""
+Example 1: sonic-db-cli CONFIG_DB keys *
+Example 2: sonic-db-cli APPL_DB HGETALL VLAN_TABLE:Vlan10
+Example 3: sonic-db-cli APPL_DB HGET VLAN_TABLE:Vlan10 mtu
+Example 4: sonic-db-cli APPL_DB EVAL "return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}" 2 k1 k2 v1 v2
+Example 5: sonic-db-cli PING
+""")
+    parser.add_argument('db_or_op', type=str, help='Database name Or Unary operation(only PING supported)')
+    parser.add_argument('cmd', nargs='*', type=str, help='Command to execute in database')
+
+    args = parser.parse_args()
+
+    if args.db_or_op:
+        if args.cmd:
+            execute_cmd(args.db_or_op, args.cmd)
+        elif args.db_or_op == 'PING':
+            ping_all_instances()
+#       TODO next PR will support 'SAVE' and 'FLUSHALL'
+#       elif args.db_or_op == 'SAVE':
+#       elif args.db_or_op == 'FLUSHALL':
+        else:
+            parser.print_help()
+    else:
+        parser.print_help()
+
+if __name__ == "__main__":
+    main()
