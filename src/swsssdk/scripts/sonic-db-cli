@@ -29,10 +29,10 @@ def ping_all_instances():
         if rsp != 'PONG':
             msg.append(rsp)
     if msg:
-        print ('\n'.join(msg))
+        print('\n'.join(msg))
         sys.exit(1)
     else:
-        print ('PONG')
+        print('PONG')
         sys.exit(0)
 
 def execute_cmd(dbname, cmd):
@@ -41,7 +41,7 @@ def execute_cmd(dbname, cmd):
         dbconn.connect(dbname)
     except RuntimeError:
         msg = "Invalid database name input : '{}'".format(dbname)
-        print (msg, file=sys.stderr)
+        print(msg, file=sys.stderr)
         sys.exit(1)
     else:
         client = dbconn.get_redis_client(dbname)
@@ -52,11 +52,11 @@ def execute_cmd(dbname, cmd):
         with these changes, it is enough for us to mimic redis-cli in SONiC so far since no application uses tty mode redis-cli output
         """
         if resp is None:
-            print ()
+            print()
         elif isinstance(resp, list):
-            print ("\n".join(resp))
+            print("\n".join(resp))
         else:
-            print (resp)
+            print(resp)
         sys.exit(0)
 
 def main():
