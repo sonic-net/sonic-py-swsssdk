@@ -32,7 +32,7 @@ def ping_all_instances():
         print ('\n'.join(msg))
         sys.exit(1)
     else:
-        print 'PONG'
+        print ('PONG')
         sys.exit(0)
 
 def execute_cmd(dbname, cmd):
@@ -52,7 +52,7 @@ def execute_cmd(dbname, cmd):
         with these changes, it is enough for us to mimic redis-cli in SONiC so far since no application uses tty mode redis-cli output
         """
         if resp is None:
-            print ("")
+            print ()
         elif isinstance(resp, list):
             print ("\n".join(resp))
         else:
