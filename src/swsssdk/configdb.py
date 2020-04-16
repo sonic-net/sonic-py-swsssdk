@@ -240,10 +240,11 @@ class ConfigDBConnector(SonicV2Connector):
                 pass    #Ignore non table-formated redis entries
         return data
 
-    def get_table(self, table):
+    def get_table(self, table, split_keys=True):
         """Read an entire table from config db.
         Args:
             table: Table name.
+            split_keys: split the keys if it is a multi-key table
         Returns: 
             Table data in a dictionary form of 
             { 'row_key': {'column_key': value, ...}, ...}
@@ -261,10 +262,16 @@ class ConfigDBConnector(SonicV2Connector):
                     if PY3K:
                         key = key.decode('utf-8')
                         (_, row) = key.split(self.TABLE_NAME_SEPARATOR, 1)
-                        data[self.deserialize_key(row)] = entry
+                        if split_keys:
+                            data[self.deserialize_key(row)] = entry
+                        else:
+                            data[row] = entry
                     else:
                         (_, row) = key.split(self.TABLE_NAME_SEPARATOR, 1)
-                        data[self.deserialize_key(row)] = entry
+                        if split_keys:
+                            data[self.deserialize_key(row)] = entry
+                        else:
+                            data[row] = entry
             except ValueError:
                 pass    #Ignore non table-formated redis entries
         return data
@@ -300,7 +307,9 @@ class ConfigDBConnector(SonicV2Connector):
             for key in table_data:
                 self.mod_entry(table_name, key, table_data[key])
 
-    def get_config(self):
+    def get_config(self, split_keys=True):
+        Args:
+            split_keys: split the keys of multi-key tables
         """Read all config data. 
         Returns:
             Config data in a dictionary form of 
@@ -320,7 +329,10 @@ class ConfigDBConnector(SonicV2Connector):
                 (table_name, row) = key.split(self.TABLE_NAME_SEPARATOR, 1)
                 entry = self.__raw_to_typed(client.hgetall(key))
                 if entry != None:
-                    data.setdefault(table_name, {})[self.deserialize_key(row)] = entry
+                    if split_keys:
+                        data.setdefault(table_name, {})[self.deserialize_key(row)] = entry
+                    else:
+                        data.setdefault(table_name, {})[row] = entry
             except ValueError:
                 pass    #Ignore non table-formated redis entries
         return data
