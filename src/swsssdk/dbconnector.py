@@ -59,6 +59,12 @@ class SonicDBConfig(object):
                         logger.warning(msg)
                         continue
 
+                    # As we load the database_config.json file for current namesapce,
+                    # set the _sonic_db_config_init flag to True to prevent loading again
+                    # by the API load_sonic_db_config()
+                    if ns is '':
+                        SonicDBConfig._sonic_db_config_init = True
+
                     with open(db_include_file, "r") as inc_file:
                         SonicDBConfig._sonic_db_config[ns] = json.load(inc_file)
 
