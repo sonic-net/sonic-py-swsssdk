@@ -6,7 +6,19 @@ import redis
 import argparse
 from multiprocessing import Pool
 
-def ping_single_instance(inst_info):
+def ping_unix_path_single_instance(inst_info):
+    inst_hostname = inst_info['hostname']
+    inst_unix_socket_path = inst_info['unix_socket_path']
+    r = redis.Redis(host=inst_hostname, unix_socket_path=inst_unix_socket_path)
+    rsp = False
+    msg = 'Could not connect to Redis at {}:{}: Connection refused'.format(inst_hostname, inst_unix_socket_path)
+    try:
+        rsp = r.ping()
+    except redis.exceptions.ConnectionError as e:
+        pass
+    return 'PONG' if rsp else msg
+
+def ping_tcp_single_instance(inst_info):
     inst_hostname = inst_info['hostname']
     inst_port = inst_info['port']
     r = redis.Redis(host=inst_hostname, port=inst_port)
@@ -19,6 +31,12 @@ def ping_single_instance(inst_info):
     return 'PONG' if rsp else msg
 
 def ping_all_instances(namespace):
+    if namespace is None:
+        namespace = ''
+        ping_single_instance = ping_tcp_single_instance
+    else:
+        ping_single_instance = ping_unix_path_single_instance
+
     db_insts = swsssdk.SonicDBConfig.get_instancelist(namespace)
     # ping all redis instances together
     # TODO: if one of the ping failed, it could fail quickly and not necessary to wait all other pings
