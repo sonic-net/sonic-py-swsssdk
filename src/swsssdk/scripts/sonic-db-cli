@@ -30,12 +30,13 @@ def ping_tcp_single_instance(inst_info):
         pass
     return 'PONG' if rsp else msg
 
-def ping_all_instances(namespace):
+def ping_all_instances(namespace, use_unix_socket=False):
+    ping_single_instance = ping_unix_path_single_instance
+    # Use the tcp connectivity if namespace is local and unixsocket cmd_option is present.
     if namespace is None:
         namespace = ''
-        ping_single_instance = ping_tcp_single_instance
-    else:
-        ping_single_instance = ping_unix_path_single_instance
+        if not use_unix_socket:
+            ping_single_instance = ping_tcp_single_instance
 
     db_insts = swsssdk.SonicDBConfig.get_instancelist(namespace)
     # ping all redis instances together
@@ -53,9 +54,12 @@ def ping_all_instances(namespace):
         print('PONG')
         sys.exit(0)
 
-def execute_cmd(dbname, cmd, namespace):
+def execute_cmd(dbname, cmd, namespace, use_unix_socket=False):
     if namespace is None:
-        dbconn = swsssdk.SonicV2Connector(use_unix_socket_path=False)
+        if use_unix_socket:
+            dbconn = swsssdk.SonicV2Connector(use_unix_socket_path=True)
+        else:
+            dbconn = swsssdk.SonicV2Connector(use_unix_socket_path=False)
     else:
         dbconn = swsssdk.SonicV2Connector(use_unix_socket_path=True, namespace=namespace)
     try:
@@ -85,12 +89,16 @@ def main():
                                      formatter_class=argparse.RawTextHelpFormatter,
                                      epilog=
 """
-Example 1: sonic-db-cli -n asic0 CONFIG_DB keys *
+**sudo** needed for commands accesing a different namespace [-n], or using unixsocket connection [-s]
+
+Example 1: sonic-db-cli -n asic0 CONFIG_DB keys \*
 Example 2: sonic-db-cli -n asic2 APPL_DB HGETALL VLAN_TABLE:Vlan10
 Example 3: sonic-db-cli APPL_DB HGET VLAN_TABLE:Vlan10 mtu
 Example 4: sonic-db-cli -n asic3 APPL_DB EVAL "return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}" 2 k1 k2 v1 v2
 Example 5: sonic-db-cli PING
+Example 6: sonic-db-cli -s PING
 """)
+    parser.add_argument('-s', '--unixsocket', help="Override use of tcp_port and use unixsocket",action='store_true')
     parser.add_argument('-n', '--namespace', type=str, help="Namespace string to use asic0/asic1.../asicn", default=None)
     parser.add_argument('db_or_op', type=str, help='Database name Or Unary operation(only PING supported)')
     parser.add_argument('cmd', nargs='*', type=str, help='Command to execute in database')
@@ -99,9 +107,9 @@ Example 5: sonic-db-cli PING
 
     if args.db_or_op:
         if args.cmd:
-            execute_cmd(args.db_or_op, args.cmd, args.namespace)
+            execute_cmd(args.db_or_op, args.cmd, args.namespace, args.unixsocket)
         elif args.db_or_op == 'PING':
-            ping_all_instances(args.namespace)
+            ping_all_instances(args.namespace, args.unixsocket)
 #       TODO next PR will support 'SAVE' and 'FLUSHALL'
 #       elif args.db_or_op == 'SAVE':
 #       elif args.db_or_op == 'FLUSHALL':

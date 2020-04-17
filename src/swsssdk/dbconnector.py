@@ -94,6 +94,11 @@ class SonicDBConfig(object):
 
     @staticmethod
     def namespace_validation(namespace):
+        # Check the namespace is valid.
+        if namespace is None:
+            msg = "invalid namespace name given as input"
+            logger.warning(msg)
+            raise RuntimeError(msg)
         # Load global config if the namespace is an external one.
         if namespace != '' and SonicDBConfig._sonic_db_global_config_init == False:
             SonicDBConfig.load_sonic_global_db_config()
