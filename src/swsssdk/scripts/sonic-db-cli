@@ -5,7 +5,6 @@ import swsssdk
 import redis
 import argparse
 from multiprocessing import Pool
-from swsssdk import SonicDBConfig
 
 def ping_unix_path_single_instance(inst_info):
     inst_hostname = inst_info['hostname']
@@ -109,7 +108,7 @@ Example 6: sonic-db-cli -s PING
     if args.db_or_op:
         # Load the database config for the namespace
         if args.namespace is not None:
-            SonicDBConfig.load_sonic_global_db_config(namespace=args.namespace)
+            swsssdk.SonicDBConfig.load_sonic_global_db_config(namespace=args.namespace)
         if args.cmd:
             execute_cmd(args.db_or_op, args.cmd, args.namespace, args.unixsocket)
         elif args.db_or_op == 'PING':
