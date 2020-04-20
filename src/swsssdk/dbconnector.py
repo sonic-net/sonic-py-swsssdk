@@ -21,9 +21,10 @@ class SonicDBConfig(object):
        applications running in the linux host namespace, like eg: config/show cli, snmp etc which
        needs to connect to databases running in other namesacpes. If the "namespace" attribute is not
        specified for an "include" attribute, it referes to the linux host namespace.
+       If the user passes namespace parameter, this API loads json file for that namespace alone.
     """
     @staticmethod
-    def load_sonic_global_db_config(global_db_file_path=SONIC_DB_GLOBAL_CONFIG_FILE):
+    def load_sonic_global_db_config(global_db_file_path=SONIC_DB_GLOBAL_CONFIG_FILE, namespace=None):
         """
         Parse and load the global database config json file
         """
@@ -44,6 +45,10 @@ class SonicDBConfig(object):
                         ns = ''
                     else:
                         ns = entry['namespace']
+
+                    # If API is called with a namespace parameter, load the json file only for that namespace.
+                    if namespace is not None and  ns != namespace:
+                        continue;
 
                     # Check if _sonic_db_config already have this namespace present
                     if ns in SonicDBConfig._sonic_db_config:
@@ -67,6 +72,10 @@ class SonicDBConfig(object):
 
                     with open(db_include_file, "r") as inc_file:
                         SonicDBConfig._sonic_db_config[ns] = json.load(inc_file)
+
+                    # If API is called with a namespace parameter,we break here as we loaded the json file.
+                    if namespace is not None and  ns == namespace:
+                        break;
 
         SonicDBConfig._sonic_db_global_config_init = True
 
@@ -99,9 +108,11 @@ class SonicDBConfig(object):
             msg = "invalid namespace name given as input"
             logger.warning(msg)
             raise RuntimeError(msg)
-        # Load global config if the namespace is an external one.
+        # Check if the global config is loaded entirely or for the namespace
         if namespace != '' and SonicDBConfig._sonic_db_global_config_init == False:
-            SonicDBConfig.load_sonic_global_db_config()
+            msg = "Load the global DB config first using API load_sonic_global_db_config"
+            logger.warning(msg)
+            raise RuntimeError(msg)
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         if namespace not in SonicDBConfig._sonic_db_config:
