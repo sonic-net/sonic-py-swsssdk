@@ -19,8 +19,8 @@ class SonicDBConfig(object):
     """This is the database_global.json parse and load API. This file has the namespace name and
        the corresponding database_config.json file. The global file is significant for the
        applications running in the linux host namespace, like eg: config/show cli, snmp etc which
-       needs to connect to databases running in other namesacpes. If the "namespace" attribute is not
-       specified for an "include" attribute, it referes to the linux host namespace.
+       needs to connect to databases running in other namespaces. If the "namespace" attribute is not
+       specified for an "include" attribute, it refers to the linux host namespace.
        If the user passes namespace parameter, this API loads json file for that namespace alone.
     """
     @staticmethod
@@ -93,7 +93,7 @@ class SonicDBConfig(object):
                 logger.warning(msg)
                 sonic_db_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config', 'database_config.json')
             with open(sonic_db_file_path, "r") as read_file:
-                # The database_config.json is loaded into the '' index, which referes to the local namespace.
+                # The database_config.json is loaded with '' as key. This refers to the local namespace.
                 SonicDBConfig._sonic_db_config[''] = json.load(read_file)
         except (OSError, IOError):
             msg = "Could not open sonic database config file '{}'".format(sonic_db_file_path)
@@ -108,20 +108,25 @@ class SonicDBConfig(object):
             msg = "invalid namespace name given as input"
             logger.warning(msg)
             raise RuntimeError(msg)
+
         # Check if the global config is loaded entirely or for the namespace
         if namespace != '' and SonicDBConfig._sonic_db_global_config_init == False:
             msg = "Load the global DB config first using API load_sonic_global_db_config"
             logger.warning(msg)
             raise RuntimeError(msg)
+
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
+
         if namespace not in SonicDBConfig._sonic_db_config:
             msg = "{} is not a valid namespace name in configuration file".format(namespace)
             logger.warning(msg)
             raise RuntimeError(msg)
 
     @staticmethod
-    def db_name_validation(db_name, namespace=''):
+    def db_name_validation(db_name, namespace=None):
+        if namespace is None:
+            namespace = ''
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         SonicDBConfig.namespace_validation(namespace)
@@ -132,7 +137,9 @@ class SonicDBConfig(object):
             raise RuntimeError(msg)
 
     @staticmethod
-    def inst_name_validation(inst_name, namespace=''):
+    def inst_name_validation(inst_name, namespace=None):
+        if namespace is None:
+            namespace = ''
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         SonicDBConfig.namespace_validation(namespace)
@@ -143,7 +150,9 @@ class SonicDBConfig(object):
             raise RuntimeError(msg)
 
     @staticmethod
-    def get_dblist(namespace=''):
+    def get_dblist(namespace=None):
+        if namespace is None:
+            namespace = ''
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         SonicDBConfig.namespace_validation(namespace)
@@ -156,7 +165,9 @@ class SonicDBConfig(object):
         return SonicDBConfig._sonic_db_config.keys()
 
     @staticmethod
-    def get_instance(db_name, namespace=''):
+    def get_instance(db_name, namespace=None):
+        if namespace is None:
+            namespace = ''
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         SonicDBConfig.db_name_validation(db_name, namespace)
@@ -165,61 +176,68 @@ class SonicDBConfig(object):
         return SonicDBConfig._sonic_db_config[namespace]["INSTANCES"][inst_name]
 
     @staticmethod
-    def get_instancelist(namespace=''):
+    def get_instancelist(namespace=None):
+        if namespace is None:
+            namespace = ''
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         SonicDBConfig.namespace_validation(namespace)
         return SonicDBConfig._sonic_db_config[namespace]["INSTANCES"]
 
     @staticmethod
-    def get_socket(db_name, namespace=''):
+    def get_socket(db_name, namespace=None):
+        if namespace is None:
+            namespace = ''
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         return SonicDBConfig.get_instance(db_name, namespace)["unix_socket_path"]
 
     @staticmethod
-    def get_hostname(db_name, namespace=''):
+    def get_hostname(db_name, namespace=None):
+        if namespace is None:
+            namespace = ''
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         return SonicDBConfig.get_instance(db_name, namespace)["hostname"]
 
     @staticmethod
-    def get_port(db_name, namespace=''):
+    def get_port(db_name, namespace=None):
+        if namespace is None:
+            namespace = ''
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         return SonicDBConfig.get_instance(db_name, namespace)["port"]
 
     @staticmethod
-    def get_dbid(db_name, namespace=''):
+    def get_dbid(db_name, namespace=None):
+        if namespace is None:
+            namespace = ''
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         SonicDBConfig.db_name_validation(db_name, namespace)
         return SonicDBConfig._sonic_db_config[namespace]["DATABASES"][db_name]["id"]
 
     @staticmethod
-    def get_separator(db_name, namespace=''):
+    def get_separator(db_name, namespace=None):
+        if namespace is None:
+            namespace = ''
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         SonicDBConfig.db_name_validation(db_name, namespace)
         return SonicDBConfig._sonic_db_config[namespace]["DATABASES"][db_name]["separator"]
 
 class SonicV2Connector(DBInterface):
-    def __init__(self, use_unix_socket_path=False, namespace='', **kwargs):
+    def __init__(self, use_unix_socket_path=False, namespace=None, **kwargs):
         super(SonicV2Connector, self).__init__(**kwargs)
         self.use_unix_socket_path = use_unix_socket_path
+
+        """If the user don't give the namespace as input, it refers to the local namespace 
+           where this application is run. (It could be a network namespace or linux host namesapce)
+        """
         self.namespace = namespace
 
-        """If the user don't give the namespace as input, it takes the default value of ''
-           '' (empty string) referes to the local namespace where this class is used.
-           (It could be a network namespace or linux host namesapce)
-        """
-        if not isinstance(namespace, str):
-            msg = "{} is not a valid namespace name".format(namespace)
-            logger.warning(msg)
-            raise RuntimeError(msg)
-
         # The TCP connection to a DB in another namespace in not supported.
-        if namespace != '' and use_unix_socket_path == False:
+        if namespace is not None and use_unix_socket_path == False:
             message = "TCP connectivity to the DB instance in a different namespace is not implemented!"
             raise NotImplementedError(message)
 

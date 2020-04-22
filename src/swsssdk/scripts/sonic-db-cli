@@ -34,7 +34,6 @@ def ping_all_instances(namespace, use_unix_socket=False):
     ping_single_instance = ping_unix_path_single_instance
     # Use the tcp connectivity if namespace is local and unixsocket cmd_option is present.
     if namespace is None:
-        namespace = ''
         if not use_unix_socket:
             ping_single_instance = ping_tcp_single_instance
 
@@ -98,7 +97,7 @@ Example 4: sonic-db-cli -n asic3 APPL_DB EVAL "return {KEYS[1],KEYS[2],ARGV[1],A
 Example 5: sonic-db-cli PING
 Example 6: sonic-db-cli -s PING
 """)
-    parser.add_argument('-s', '--unixsocket', help="Override use of tcp_port and use unixsocket",action='store_true')
+    parser.add_argument('-s', '--unixsocket', help="Override use of tcp_port and use unixsocket", action='store_true')
     parser.add_argument('-n', '--namespace', type=str, help="Namespace string to use asic0/asic1.../asicn", default=None)
     parser.add_argument('db_or_op', type=str, help='Database name Or Unary operation(only PING supported)')
     parser.add_argument('cmd', nargs='*', type=str, help='Command to execute in database')

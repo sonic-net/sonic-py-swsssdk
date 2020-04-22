@@ -33,6 +33,16 @@ class ConfigDBConnector(SonicV2Connector):
         # By default, connect to Redis through TCP, which does not requires root.
         if len(kwargs) == 0:
             kwargs['host'] = '127.0.0.1'
+
+        """The ConfigDBConnector class will accept the parameter 'namespace' which is used to
+           load the database_config and connect to the redis DB instances in that namespace.
+           By default namespace is set to None, which means it connects to local redis DB instances.
+
+           When connecting to a different namespace set the use_unix_socket_path flag to true.
+           Eg. ConfigDBConnector(use_unix_socket_path=True, namespace=namespace)
+
+           'namespace' is implicitly passed to the parent SonicV2Connector class.
+        """
         super(ConfigDBConnector, self).__init__(**kwargs)
         self.handlers = {}
 
