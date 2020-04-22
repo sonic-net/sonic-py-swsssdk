@@ -124,9 +124,15 @@ class SonicDBConfig(object):
             raise RuntimeError(msg)
 
     @staticmethod
+    def EMPTY_NAMESPACE(ns):
+        if ns is None:
+            return ''
+        else:
+            return ns
+
+    @staticmethod
     def db_name_validation(db_name, namespace=None):
-        if namespace is None:
-            namespace = ''
+        namespace = SonicDBConfig.EMPTY_NAMESPACE(namespace)
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         SonicDBConfig.namespace_validation(namespace)
@@ -138,8 +144,7 @@ class SonicDBConfig(object):
 
     @staticmethod
     def inst_name_validation(inst_name, namespace=None):
-        if namespace is None:
-            namespace = ''
+        namespace = SonicDBConfig.EMPTY_NAMESPACE(namespace)
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         SonicDBConfig.namespace_validation(namespace)
@@ -151,8 +156,7 @@ class SonicDBConfig(object):
 
     @staticmethod
     def get_dblist(namespace=None):
-        if namespace is None:
-            namespace = ''
+        namespace = SonicDBConfig.EMPTY_NAMESPACE(namespace)
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         SonicDBConfig.namespace_validation(namespace)
@@ -166,8 +170,7 @@ class SonicDBConfig(object):
 
     @staticmethod
     def get_instance(db_name, namespace=None):
-        if namespace is None:
-            namespace = ''
+        namespace = SonicDBConfig.EMPTY_NAMESPACE(namespace)
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         SonicDBConfig.db_name_validation(db_name, namespace)
@@ -177,8 +180,7 @@ class SonicDBConfig(object):
 
     @staticmethod
     def get_instancelist(namespace=None):
-        if namespace is None:
-            namespace = ''
+        namespace = SonicDBConfig.EMPTY_NAMESPACE(namespace)
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         SonicDBConfig.namespace_validation(namespace)
@@ -186,32 +188,28 @@ class SonicDBConfig(object):
 
     @staticmethod
     def get_socket(db_name, namespace=None):
-        if namespace is None:
-            namespace = ''
+        namespace = SonicDBConfig.EMPTY_NAMESPACE(namespace)
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         return SonicDBConfig.get_instance(db_name, namespace)["unix_socket_path"]
 
     @staticmethod
     def get_hostname(db_name, namespace=None):
-        if namespace is None:
-            namespace = ''
+        namespace = SonicDBConfig.EMPTY_NAMESPACE(namespace)
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         return SonicDBConfig.get_instance(db_name, namespace)["hostname"]
 
     @staticmethod
     def get_port(db_name, namespace=None):
-        if namespace is None:
-            namespace = ''
+        namespace = SonicDBConfig.EMPTY_NAMESPACE(namespace)
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         return SonicDBConfig.get_instance(db_name, namespace)["port"]
 
     @staticmethod
     def get_dbid(db_name, namespace=None):
-        if namespace is None:
-            namespace = ''
+        namespace = SonicDBConfig.EMPTY_NAMESPACE(namespace)
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         SonicDBConfig.db_name_validation(db_name, namespace)
@@ -219,8 +217,7 @@ class SonicDBConfig(object):
 
     @staticmethod
     def get_separator(db_name, namespace=None):
-        if namespace is None:
-            namespace = ''
+        namespace = SonicDBConfig.EMPTY_NAMESPACE(namespace)
         if SonicDBConfig._sonic_db_config_init == False:
             SonicDBConfig.load_sonic_db_config()
         SonicDBConfig.db_name_validation(db_name, namespace)
