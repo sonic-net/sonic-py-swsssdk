@@ -6,12 +6,14 @@ import re
 
 
 SONIC_ETHERNET_RE_PATTERN = "^Ethernet(\d+)$"
+SONIC_ETHERNET_BP_RE_PATTERN = "^Ethernet-BP(\d+)$"
 SONIC_PORTCHANNEL_RE_PATTERN = "^PortChannel(\d+)$"
 SONIC_MGMT_PORT_RE_PATTERN = "^eth(\d+)$"
 
 
 class BaseIdx:
     ethernet_base_idx = 1
+    ethernet_bp_base_idx = 9000
     portchannel_base_idx = 1000
     mgmt_port_base_idx = 10000
 
@@ -19,6 +21,7 @@ def get_index(if_name):
     """
     OIDs are 1-based, interfaces are 0-based, return the 1-based index
     Ethernet N = N + 1
+    Ethernet_BP N = N + 9000
     PortChannel N = N + 1000
     eth N = N + 10000
     """
@@ -29,11 +32,13 @@ def get_index_from_str(if_name):
     """
     OIDs are 1-based, interfaces are 0-based, return the 1-based index
     Ethernet N = N + 1
+    Ethernet_BP N = N + 9000
     PortChannel N = N + 1000
     eth N = N + 10000
     """
     patterns = {
         SONIC_ETHERNET_RE_PATTERN: BaseIdx.ethernet_base_idx,
+        SONIC_ETHERNET_BP_RE_PATTERN: BaseIdx.ethernet_bp_base_idx,
         SONIC_PORTCHANNEL_RE_PATTERN: BaseIdx.portchannel_base_idx,
         SONIC_MGMT_PORT_RE_PATTERN: BaseIdx.mgmt_port_base_idx
     }
