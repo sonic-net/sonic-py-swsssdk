@@ -6,6 +6,10 @@ import re
 
 
 SONIC_ETHERNET_RE_PATTERN = "^Ethernet(\d+)$"
+"""
+Ethernet-BP refers to BackPlane interfaces
+in multi-asic platform.
+"""
 SONIC_ETHERNET_BP_RE_PATTERN = "^Ethernet-BP(\d+)$"
 SONIC_PORTCHANNEL_RE_PATTERN = "^PortChannel(\d+)$"
 SONIC_MGMT_PORT_RE_PATTERN = "^eth(\d+)$"
