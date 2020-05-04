@@ -5,53 +5,55 @@ import swsssdk
 import redis
 import argparse
 from multiprocessing import Pool
+from functools import partial
 
-def ping_unix_path_single_instance(inst_info):
+def handle_single_instance(op, use_unix_socket, inst_info):
     inst_hostname = inst_info['hostname']
-    inst_unix_socket_path = inst_info['unix_socket_path']
-    r = redis.Redis(host=inst_hostname, unix_socket_path=inst_unix_socket_path)
+    if use_unix_socket:
+        inst_unix_socket_path = inst_info['unix_socket_path']
+        r = redis.Redis(host=inst_hostname, unix_socket_path=inst_unix_socket_path)
+    else:
+        inst_port = inst_info['port']
+        r = redis.Redis(host=inst_hostname, port=inst_port)
     rsp = False
-    msg = 'Could not connect to Redis at {}:{}: Connection refused'.format(inst_hostname, inst_unix_socket_path)
+    msg = 'Could not connect to Redis at {}:{}: Connection refused'.format(inst_hostname,
+           inst_unix_socket_path if use_unix_socket else inst_port)
     try:
-        rsp = r.ping()
+        if op == 'PING':
+            rsp = r.ping()
+        elif op == 'SAVE':
+            rsp = r.save()
+        elif op == 'FLUSHALL':
+            rsp = r.flushall()
+        else:
+            msg = "operation {} is not supported".format(op)
     except redis.exceptions.ConnectionError as e:
         pass
-    return 'PONG' if rsp else msg
+    return 'OK' if rsp else msg
 
-def ping_tcp_single_instance(inst_info):
-    inst_hostname = inst_info['hostname']
-    inst_port = inst_info['port']
-    r = redis.Redis(host=inst_hostname, port=inst_port)
-    rsp = False
-    msg = 'Could not connect to Redis at {}:{}: Connection refused'.format(inst_hostname, inst_port)
-    try:
-        rsp = r.ping()
-    except redis.exceptions.ConnectionError as e:
-        pass
-    return 'PONG' if rsp else msg
-
-def ping_all_instances(namespace, use_unix_socket=False):
-    ping_single_instance = ping_unix_path_single_instance
+def handle_all_instances(namespace, op, use_unix_socket=False):
     # Use the tcp connectivity if namespace is local and unixsocket cmd_option is present.
-    if namespace is None:
-        if not use_unix_socket:
-            ping_single_instance = ping_tcp_single_instance
+    if namespace is not None:
+        use_unix_socket = True
 
     db_insts = swsssdk.SonicDBConfig.get_instancelist(namespace)
-    # ping all redis instances together
-    # TODO: if one of the ping failed, it could fail quickly and not necessary to wait all other pings
+    # operate all redis instances together
+    # TODO: if one of the operation failed, it could fail quickly and not necessary to wait all other pings
     p = Pool(len(db_insts))
-    rsps =  p.map(ping_single_instance, [v for k, v in db_insts.items()])
+    func = partial(handle_single_instance, op, use_unix_socket)
+    rsps = p.map(func, [v for k, v in db_insts.items()])
     msg = []
     for rsp in rsps:
-        if rsp != 'PONG':
+        if rsp != 'OK':
             msg.append(rsp)
     if msg:
         print('\n'.join(msg))
         sys.exit(1)
-    else:
+    elif op == 'PING':
         print('PONG')
-        sys.exit(0)
+    else:
+        print('OK')
+    sys.exit(0)
 
 def execute_cmd(dbname, cmd, namespace, use_unix_socket=False):
     if namespace is None:
@@ -94,12 +96,13 @@ Example 1: sonic-db-cli -n asic0 CONFIG_DB keys \*
 Example 2: sonic-db-cli -n asic2 APPL_DB HGETALL VLAN_TABLE:Vlan10
 Example 3: sonic-db-cli APPL_DB HGET VLAN_TABLE:Vlan10 mtu
 Example 4: sonic-db-cli -n asic3 APPL_DB EVAL "return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}" 2 k1 k2 v1 v2
-Example 5: sonic-db-cli PING
-Example 6: sonic-db-cli -s PING
+Example 5: sonic-db-cli PING | sonic-db-cli -s PING
+Example 6: sonic-db-cli SAVE | sonic-db-cli -s SAVE
+Example 7: sonic-db-cli FLUSHALL | sonic-db-cli -s FLUSHALL
 """)
     parser.add_argument('-s', '--unixsocket', help="Override use of tcp_port and use unixsocket", action='store_true')
     parser.add_argument('-n', '--namespace', type=str, help="Namespace string to use asic0/asic1.../asicn", default=None)
-    parser.add_argument('db_or_op', type=str, help='Database name Or Unary operation(only PING supported)')
+    parser.add_argument('db_or_op', type=str, help='Database name Or Unary operation(only PING/SAVE/FLUSHALL supported)')
     parser.add_argument('cmd', nargs='*', type=str, help='Command to execute in database')
 
     args = parser.parse_args()
@@ -110,11 +113,8 @@ Example 6: sonic-db-cli -s PING
             swsssdk.SonicDBConfig.load_sonic_global_db_config(namespace=args.namespace)
         if args.cmd:
             execute_cmd(args.db_or_op, args.cmd, args.namespace, args.unixsocket)
-        elif args.db_or_op == 'PING':
-            ping_all_instances(args.namespace, args.unixsocket)
-#       TODO next PR will support 'SAVE' and 'FLUSHALL'
-#       elif args.db_or_op == 'SAVE':
-#       elif args.db_or_op == 'FLUSHALL':
+        elif args.db_or_op == 'PING' or args.db_or_op == 'SAVE' or args.db_or_op == 'FLUSHALL':
+            handle_all_instances(args.namespace, args.db_or_op, args.unixsocket)
         else:
             parser.print_help()
     else:
