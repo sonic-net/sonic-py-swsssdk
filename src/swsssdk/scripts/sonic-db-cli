@@ -38,7 +38,7 @@ def handle_all_instances(namespace, op, use_unix_socket=False):
 
     db_insts = swsssdk.SonicDBConfig.get_instancelist(namespace)
     # Operate All Redis Instances in Parallel
-    # TODO: if one of the operations failed, it could fail quickly and not necessary to wait all other pings
+    # TODO: if one of the operations failed, it could fail quickly and not necessary to wait all other operations
     p = Pool(len(db_insts))
     func = partial(handle_single_instance, op, use_unix_socket)
     rsps = p.map(func, [v for k, v in db_insts.items()])
