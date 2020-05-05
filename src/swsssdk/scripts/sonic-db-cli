@@ -26,10 +26,10 @@ def handle_single_instance(op, use_unix_socket, inst_info):
         elif op == 'FLUSHALL':
             rsp = r.flushall()
         else:
-            msg = "operation {} is not supported".format(op)
+            raise ValueError("Operation {} is not supported".format(op))
     except redis.exceptions.ConnectionError as e:
         pass
-    return 'OK' if rsp else msg
+    return None if rsp else msg
 
 def handle_all_instances(namespace, op, use_unix_socket=False):
     # Use the tcp connectivity if namespace is local and unixsocket cmd_option is present.
@@ -37,19 +37,18 @@ def handle_all_instances(namespace, op, use_unix_socket=False):
         use_unix_socket = True
 
     db_insts = swsssdk.SonicDBConfig.get_instancelist(namespace)
-    # operate all redis instances together
-    # TODO: if one of the operation failed, it could fail quickly and not necessary to wait all other pings
+    # Operate All Redis Instances in Parallel
+    # TODO: if one of the operations failed, it could fail quickly and not necessary to wait all other pings
     p = Pool(len(db_insts))
     func = partial(handle_single_instance, op, use_unix_socket)
     rsps = p.map(func, [v for k, v in db_insts.items()])
-    msg = []
-    for rsp in rsps:
-        if rsp != 'OK':
-            msg.append(rsp)
+    msg = [rsp for rsp in rsps if rsp]
+
     if msg:
         print('\n'.join(msg))
         sys.exit(1)
-    elif op == 'PING':
+
+    if op == 'PING':
         print('PONG')
     else:
         print('OK')
@@ -113,8 +112,16 @@ Example 7: sonic-db-cli FLUSHALL | sonic-db-cli -s FLUSHALL
             swsssdk.SonicDBConfig.load_sonic_global_db_config(namespace=args.namespace)
         if args.cmd:
             execute_cmd(args.db_or_op, args.cmd, args.namespace, args.unixsocket)
-        elif args.db_or_op == 'PING' or args.db_or_op == 'SAVE' or args.db_or_op == 'FLUSHALL':
-            handle_all_instances(args.namespace, args.db_or_op, args.unixsocket)
+        elif args.db_or_op in ('PING', 'SAVE', 'FLUSHALL'):
+            # redis-cli doesn't depend on database_config.json which could raise some exceptions
+            # sonic-db-cli catch all possible exceptions and handle it as a failure case which not return 'OK' or 'PONG'
+            try:
+                handle_all_instances(args.namespace, args.db_or_op, args.unixsocket)
+            except Exception as ex:
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                message = template.format(type(ex).__name__, ex.args)
+                print(message)
+                sys.exit(1)
         else:
             parser.print_help()
     else:
