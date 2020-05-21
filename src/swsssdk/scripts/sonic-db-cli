@@ -7,6 +7,14 @@ import argparse
 from multiprocessing import Pool
 from functools import partial
 
+def print_response(resp):
+    if resp is None:
+        print()
+    elif isinstance(resp, list):
+        for x in resp: print(x.decode('utf-8') if isinstance(x, bytes) else x)
+    else:
+        print(resp.decode('utf-8') if isinstance(resp, bytes) else resp)
+
 def handle_single_instance(op, use_unix_socket, inst_info):
     inst_hostname = inst_info['hostname']
     if use_unix_socket:
@@ -76,12 +84,7 @@ def execute_cmd(dbname, cmd, namespace, use_unix_socket=False):
         based on our usage in SONiC, None and list type output from python API needs to be modified
         with these changes, it is enough for us to mimic redis-cli in SONiC so far since no application uses tty mode redis-cli output
         """
-        if resp is None:
-            print()
-        elif isinstance(resp, list):
-            print("\n".join(resp))
-        else:
-            print(resp)
+        print_response(resp)
         sys.exit(0)
 
 def main():
