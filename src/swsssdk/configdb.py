@@ -1,5 +1,5 @@
 """
-SONiC ConfigDB connection module 
+SONiC ConfigDB connection module
 
 Example:
     # Write to config DB
@@ -75,7 +75,7 @@ class ConfigDBConnector(SonicV2Connector):
 
     def subscribe(self, table, handler):
         """Set a handler to handle config change in certain table.
-        Note that a single handler can be registered to different tables by 
+        Note that a single handler can be registered to different tables by
         calling this fuction multiple times.
         Args:
             table: Table name.
@@ -141,7 +141,7 @@ class ConfigDBConnector(SonicV2Connector):
                     typed_data[key] = raw_data[raw_key]
         return typed_data
 
-    def __typed_to_raw(self, typed_data):
+    def __typed_to_raw(self, typed_data, dkeys=None):
         if typed_data == None:
             return None
         elif typed_data == {}:
@@ -151,6 +151,8 @@ class ConfigDBConnector(SonicV2Connector):
             value = typed_data[key]
             if type(value) is list:
                 raw_data[key+'@'] = ','.join(value)
+            elif value is None and dkeys is not None:
+                dkeys[key] = None
             else:
                 raw_data[key] = str(value)
         return raw_data
@@ -208,14 +210,44 @@ class ConfigDBConnector(SonicV2Connector):
         if data == None:
             client.delete(_hash)
         else:
-            client.hmset(_hash, self.__typed_to_raw(data))
+            # We allow deletion of field by setting them to None, __typed_to_raw()
+            # will fill keys to be deleted in dkeys arg.
+            dkeys = dict()
+            raw = self.__typed_to_raw(data, dkeys)
+            if raw and len(raw):
+                client.hmset(_hash, raw)
+            # check if any dkeys(i.e. fields) to be deleted
+            if len(dkeys):
+                # get the original first, nothing to do if original is None
+                original = self.get_entry(table, key)
+                if original:
+                    self.__delete_fields(client, _hash, dkeys, original)
+
+            return
+
+    def __delete_fields(self, client, _hash, fields, original):
+        """Delete fields under a key(_hash) of a table in config db.
+        Args:
+            client: db client
+            _hash: _hash of the key, where fields to be deleted
+            fields: fields to be deleted, a dict as {field1: None, field2: None, ...}
+            original: original value of _hash i.e. field, value dict.
+        """
+        for k in fields:
+            v = original.get(k)
+            # nothing to do if v is None
+            if v:
+                if type(v) == list:
+                    k = k + '@'
+                client.hdel(_hash, self.serialize_key(k))
+        return
 
     def get_entry(self, table, key):
         """Read a table entry from config db.
         Args:
             table: Table name.
             key: Key of table entry, or a tuple of keys if it is a multi-key table.
-        Returns: 
+        Returns:
             Table row data in a form of dictionary {'column_key': 'value', ...}
             Empty dictionary if table does not exist or entry does not exist.
         """
@@ -230,7 +262,7 @@ class ConfigDBConnector(SonicV2Connector):
             table: Table name.
             split: split the first part and return second.
                    Useful for keys with two parts <tablename>:<key>
-        Returns: 
+        Returns:
             List of keys.
         """
         client = self.get_redis_client(self.db_name)
@@ -254,8 +286,8 @@ class ConfigDBConnector(SonicV2Connector):
         """Read an entire table from config db.
         Args:
             table: Table name.
-        Returns: 
-            Table data in a dictionary form of 
+        Returns:
+            Table data in a dictionary form of
             { 'row_key': {'column_key': value, ...}, ...}
             or { ('l1_key', 'l2_key', ...): {'column_key': value, ...}, ...} for a multi-key table.
             Empty dictionary if table does not exist.
@@ -296,7 +328,7 @@ class ConfigDBConnector(SonicV2Connector):
            Extra entries/fields in the db which are not in the data are kept.
         Args:
             data: config data in a dictionary form
-            { 
+            {
                 'TABLE_NAME': { 'row_key': {'column_key': 'value', ...}, ...},
                 'MULTI_KEY_TABLE_NAME': { ('l1_key', 'l2_key', ...) : {'column_key': 'value', ...}, ...},
                 ...
@@ -311,10 +343,10 @@ class ConfigDBConnector(SonicV2Connector):
                 self.mod_entry(table_name, key, table_data[key])
 
     def get_config(self):
-        """Read all config data. 
+        """Read all config data.
         Returns:
-            Config data in a dictionary form of 
-            { 
+            Config data in a dictionary form of
+            {
                 'TABLE_NAME': { 'row_key': {'column_key': 'value', ...}, ...},
                 'MULTI_KEY_TABLE_NAME': { ('l1_key', 'l2_key', ...) : {'column_key': 'value', ...}, ...},
                 ...
@@ -334,4 +366,3 @@ class ConfigDBConnector(SonicV2Connector):
             except ValueError:
                 pass    #Ignore non table-formated redis entries
         return data
-
