@@ -2,6 +2,7 @@ from setuptools import setup
 
 dependencies = [
     'redis==2.10.6',
+    'redis-dump-load',
 ]
 
 high_performance_deps = [
