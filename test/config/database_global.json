@@ -5,11 +5,11 @@
         },
         {
             "namespace" : "asic0",
-            "include" : "database_config.json"
+            "include" : "/sonic/src/sonic-py-swsssdk/test/config/database_config.json"
         },
         {
             "namespace" : "asic1",
-            "include" : "database_config.json"
+            "include" : "../config/database_config.json"
         },
         {
             "namespace" : "asic2",

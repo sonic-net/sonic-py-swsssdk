@@ -26,7 +26,7 @@ class Test_load_sonic_db_config(TestCase):
         self.assertEqual(ns_input, ns_list)
 
     # This is the test to check if the global config file and get the correct DB in a namespace
-    def test__namespace_list(self):
+    def test__dbConfig(self):
         import swsssdk
         dbConfig = swsssdk.SonicDBConfig()
         filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), './config', 'database_global.json')
