@@ -118,8 +118,6 @@ def get_rif_port_map(db):
         return {}
 
     rif_port_oid_map = {}
-    offset = len("ASIC_STATE:SAI_OBJECT_TYPE_ROUTER_INTERFACE:")
-    oid_pfx = len("oid:0x")
     for rif_s in rif_keys_str:
         rif_id = rif_s.lstrip(b"ASIC_STATE:SAI_OBJECT_TYPE_ROUTER_INTERFACE:oid:0x")
         ent = db.get_all('ASIC_DB', rif_s, blocking=True)
