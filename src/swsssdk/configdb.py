@@ -141,21 +141,22 @@ class ConfigDBConnector(SonicV2Connector):
                     typed_data[key] = raw_data[raw_key]
         return typed_data
 
-    def __typed_to_raw(self, typed_data, dkeys=None):
+    def __typed_to_raw(self, typed_data):
+        raw_data = dict(); dfields = dict()
         if typed_data == None:
-            return None
+            return raw_data, dfields
         elif typed_data == {}:
-            return { "NULL": "NULL" }
-        raw_data = {}
+            return { "NULL": "NULL" }, dfields
+
         for key in typed_data:
             value = typed_data[key]
             if type(value) is list:
                 raw_data[key+'@'] = ','.join(value)
-            elif value is None and dkeys is not None:
-                dkeys[key] = None
+            elif value is None:
+                dfields[key] = None
             else:
                 raw_data[key] = str(value)
-        return raw_data
+        return raw_data, dfields
 
     @staticmethod
     def serialize_key(key):
@@ -189,11 +190,16 @@ class ConfigDBConnector(SonicV2Connector):
             client.delete(_hash)
         else:
             original = self.get_entry(table, key)
-            client.hmset(_hash, self.__typed_to_raw(data))
-            for k in [ k for k in original.keys() if k not in data.keys() ]:
+            raw, _ = self.__typed_to_raw(data)
+            if len(raw):
+                client.hmset(_hash, raw)
+
+            for k in original.keys():
                 if type(original[k]) == list:
                     k = k + '@'
-                client.hdel(_hash, self.serialize_key(k))
+                if k not in raw.keys():
+                    client.hdel(_hash, self.serialize_key(k))
+        return
 
     def mod_entry(self, table, key, data):
         """Modify a table entry to config db.
@@ -210,36 +216,21 @@ class ConfigDBConnector(SonicV2Connector):
         if data == None:
             client.delete(_hash)
         else:
-            # We allow deletion of field by setting them to None, __typed_to_raw()
-            # will fill keys to be deleted in dkeys arg.
-            dkeys = dict()
-            raw = self.__typed_to_raw(data, dkeys)
-            if raw and len(raw):
-                client.hmset(_hash, raw)
-            # check if any dkeys(i.e. fields) to be deleted
-            if len(dkeys):
-                # get the original first, nothing to do if original is None
+            raw, dfields = self.__typed_to_raw(data)
+            # We allow deletion of field by setting them to None
+            if len(dfields):
+                # get the original first,
                 original = self.get_entry(table, key)
-                if original:
-                    self.__delete_fields(client, _hash, dkeys, original)
-
-            return
-
-    def __delete_fields(self, client, _hash, fields, original):
-        """Delete fields under a key(_hash) of a table in config db.
-        Args:
-            client: db client
-            _hash: _hash of the key, where fields to be deleted
-            fields: fields to be deleted, a dict as {field1: None, field2: None, ...}
-            original: original value of _hash i.e. field, value dict.
-        """
-        for k in fields:
-            v = original.get(k)
-            # nothing to do if v is None
-            if v:
-                if type(v) == list:
-                    k = k + '@'
-                client.hdel(_hash, self.serialize_key(k))
+                for k in dfields:
+                    v = original.get(k)
+                    # nothing to do if v is None
+                    if v:
+                        if type(v) == list:
+                            k = k + '@'
+                        client.hdel(_hash, self.serialize_key(k))
+            # set raw
+            if len(raw):
+                client.hmset(_hash, raw)
         return
 
     def get_entry(self, table, key):
