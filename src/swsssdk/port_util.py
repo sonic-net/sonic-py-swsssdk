@@ -135,13 +135,17 @@ def get_vlan_interface_oid_map(db):
     rif_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_RIF_NAME_MAP', blocking=True)
     rif_type_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_RIF_TYPE_MAP', blocking=True)
 
-    if not rif_name_map:
+    if not rif_name_map or not rif_type_name_map:
         return {}
 
     oid_pfx = len("oid:0x")
-    vlan_if_name_map = {sai_oid[oid_pfx:]: if_name for if_name, sai_oid in rif_name_map.items()
-                        if rif_type_name_map[sai_oid] == b'SAI_ROUTER_INTERFACE_TYPE_VLAN'
-                        and get_index(if_name) is not None}
+    vlan_if_name_map = {}
+
+    for if_name, sai_oid in rif_name_map.items():
+        # Check if RIF is l3 vlan interface
+        if rif_type_name_map[sai_oid] == b'SAI_ROUTER_INTERFACE_TYPE_VLAN':
+            # Check if interface name is in style understood to be a SONiC interface
+            if get_index(if_name):
+                vlan_if_name_map[sai_oid[oid_pfx:]] = if_name
 
     return vlan_if_name_map
-
