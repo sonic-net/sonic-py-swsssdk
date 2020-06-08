@@ -5,7 +5,7 @@
         },
         {
             "namespace" : "asic0",
-            "include" : "/sonic/src/sonic-py-swsssdk/test/config/database_config.json"
+            "include" : "../config/database_config.json"
         },
         {
             "namespace" : "asic1",
