@@ -1,7 +1,7 @@
 from setuptools import setup
 
 dependencies = [
-    'redis==2.10.6',
+    'redis==3.5.3',
     'redis-dump-load',
 ]
 
