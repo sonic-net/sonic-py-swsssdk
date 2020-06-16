@@ -233,11 +233,6 @@ class SonicV2Connector(object):
         """
         self.namespace = namespace
 
-        # The TCP connection to a DB in another namespace in not supported.
-        if namespace is not None and use_unix_socket_path == False:
-            message = "TCP connectivity to the DB instance in a different namespace is not implemented!"
-            raise NotImplementedError(message)
-
         for db_name in self.get_db_list():
             # set a database name as a constant value attribute.
             setattr(self, db_name, db_name)
