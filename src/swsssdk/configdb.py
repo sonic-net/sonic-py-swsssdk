@@ -193,6 +193,42 @@ class ConfigDBConnector(SonicV2Connector):
                     k = k + '@'
                 client.hdel(_hash, self.serialize_key(k))
 
+    def set_bulk(self, payload):
+        """Write bulk entries to config db.
+        """
+        client = self.redis_clients[self.db_name]
+        pipe = client.pipeline()
+        for (k,v) in payload:
+            pipe.hmset(k, v)
+        pipe.execute()
+
+    def del_bulk(self, payload):
+        """Delete bulk entries from config db.
+        """
+        client = self.redis_clients[self.db_name]
+        pipe = client.pipeline()
+        for (k) in payload:
+            pipe.delete(k)
+        pipe.execute()
+
+    def hdel_bulk(self, payload):
+        """Delete bulk entries from config db.
+        """
+        client = self.redis_clients[self.db_name]
+        pipe = client.pipeline()
+        for (k,v) in payload:
+            pipe.hdel(k,v)
+        pipe.execute()
+
+    def getall_bulk(self, payload):
+        """hgetall bulk entries from config db.
+        """
+        client = self.redis_clients[self.db_name]
+        pipe = client.pipeline()
+        for (k) in payload:
+            pipe.hgetall(k)
+        return pipe.execute()
+
     def mod_entry(self, table, key, data):
         """Modify a table entry to config db.
         Args:
