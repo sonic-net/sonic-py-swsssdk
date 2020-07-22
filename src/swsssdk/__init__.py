@@ -9,7 +9,7 @@ logger.addHandler(logging.NullHandler())
 
 try:
     from .dbconnector import SonicDBConfig, SonicV2Connector
-    from .configdb import ConfigDBConnector
+    from .configdb import ConfigDBConnector, ConfigDBPipeConnector
     from .sonic_db_dump_load import sonic_db_dump_load
 except (KeyError, ValueError):
     msg = "Failed to database connector objects -- incorrect database config schema."
