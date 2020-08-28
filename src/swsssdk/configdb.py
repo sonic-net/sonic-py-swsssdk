@@ -413,7 +413,6 @@ class ConfigDBPipeConnector(ConfigDBConnector):
             for key in table_data:
                 self.__mod_entry(pipe, table_name, key, table_data[key])
         pipe.execute()
-        client.bgsave()
 
     def __get_config(self, client, pipe, data, cursor):
         """Read config data in batches of size REDIS_SCAN_BATCH_SIZE using Redis pipelines
