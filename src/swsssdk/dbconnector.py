@@ -247,11 +247,10 @@ class SonicV2Connector(object):
             self.dbintf.redis_kwargs["port"] = self.get_db_port(db_name)
             self.dbintf.redis_kwargs["unix_socket_path"] = None
         db_id = self.get_dbid(db_name)
-        self.dbintf.connect(db_id, retry_on)
+        self.dbintf.connect(db_id, db_name, retry_on)
 
     def close(self, db_name):
-        db_id = self.get_dbid(db_name)
-        self.dbintf.close(db_id)
+        self.dbintf.close(db_name)
 
     def get_db_list(self):
         return SonicDBConfig.get_dblist(self.namespace)
@@ -275,43 +274,33 @@ class SonicV2Connector(object):
         return SonicDBConfig.get_separator(db_name, self.namespace)
 
     def get_redis_client(self, db_name):
-        db_id = self.get_dbid(db_name)
-        return self.dbintf.get_redis_client(db_id)
+        return self.dbintf.get_redis_client(db_name)
 
     def publish(self, db_name, channel, message):
-        db_id = self.get_dbid(db_name)
-        return self.dbintf.publish(db_id, channel, message)
+        return self.dbintf.publish(db_name, channel, message)
 
     def expire(self, db_name, key, timeout_sec):
-        db_id = self.get_dbid(db_name)
-        return self.dbintf.expire(db_id, key, timeout_sec)
+        return self.dbintf.expire(db_name, key, timeout_sec)
 
     def exists(self, db_name, key):
-        db_id = self.get_dbid(db_name)
-        return self.dbintf.exists(db_id, key)
+        return self.dbintf.exists(db_name, key)
 
     def keys(self, db_name, pattern='*', *args, **kwargs):
-        db_id = self.get_dbid(db_name)
-        return self.dbintf.keys(db_id, pattern, *args, **kwargs)
+        return self.dbintf.keys(db_name, pattern, *args, **kwargs)
 
     def get(self, db_name, _hash, key, *args, **kwargs):
-        db_id = self.get_dbid(db_name)
-        return self.dbintf.get(db_id, _hash, key, *args, **kwargs)
+        return self.dbintf.get(db_name, _hash, key, *args, **kwargs)
 
     def get_all(self, db_name, _hash, *args, **kwargs):
-        db_id = self.get_dbid(db_name)
-        return self.dbintf.get_all(db_id, _hash, *args, **kwargs)
+        return self.dbintf.get_all(db_name, _hash, *args, **kwargs)
 
     def set(self, db_name, _hash, key, val, *args, **kwargs):
-        db_id = self.get_dbid(db_name)
-        return self.dbintf.set(db_id, _hash, key, val, *args, **kwargs)
+        return self.dbintf.set(db_name, _hash, key, val, *args, **kwargs)
 
     def delete(self, db_name, key, *args, **kwargs):
-        db_id = self.get_dbid(db_name)
-        return self.dbintf.delete(db_id, key, *args, **kwargs)
+        return self.dbintf.delete(db_name, key, *args, **kwargs)
 
     def delete_all_by_pattern(self, db_name, pattern, *args, **kwargs):
-        db_id = self.get_dbid(db_name)
-        self.dbintf.delete_all_by_pattern(db_id, pattern, *args, **kwargs)
+        self.dbintf.delete_all_by_pattern(db_name, pattern, *args, **kwargs)
 
     pass
