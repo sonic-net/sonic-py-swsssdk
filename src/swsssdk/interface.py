@@ -18,7 +18,7 @@ def blockable(f):
 
         class SonicV2Connector:
             @blockable
-            def keys(self, db_id):
+            def keys(self, db_name):
                 # ...
 
         # call with:
@@ -181,11 +181,12 @@ class DBInterface(object):
         if db_name is None:
             raise ValueError("No database Name configured for '{}'".format(db_name))
 
-        client = redis.StrictRedis(db=db_id, **self.redis_kwargs)
+        if db_name not in self.redis_clients.keys():
+            client = redis.StrictRedis(db=db_id, **self.redis_kwargs)
 
-        # Enable the notification mechanism for keyspace events in Redis
-        client.config_set('notify-keyspace-events', self.KEYSPACE_EVENTS)
-        self.redis_clients[db_name] = client
+            # Enable the notification mechanism for keyspace events in Redis
+            client.config_set('notify-keyspace-events', self.KEYSPACE_EVENTS)
+            self.redis_clients[db_name] = client
 
     def _persistent_connect(self, db_id, db_name):
         """
