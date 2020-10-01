@@ -155,6 +155,9 @@ class DBInterface(object):
         # Create a separate client for each database
         self.redis_clients = DBRegistry()
 
+        # record db_name to db_id mapping on local
+        self.redis_db_map = {}
+
         # Create a channel for receiving needed keyspace event
         # notifications for each client
         self.keyspace_notification_channels = DBRegistry()
@@ -182,6 +185,7 @@ class DBInterface(object):
             raise ValueError("No database Name configured for '{}'".format(db_name))
 
         if db_name not in self.redis_clients.keys():
+            self.redis_db_map[db_name] = db_id
             client = redis.StrictRedis(db=db_id, **self.redis_kwargs)
 
             # Enable the notification mechanism for keyspace events in Redis
@@ -209,8 +213,10 @@ class DBInterface(object):
         """
         if db_name in self.redis_clients:
             self.redis_clients[db_name].connection_pool.disconnect()
+            del self.redis_clients[db_name]
         if db_name in self.keyspace_notification_channels:
             self.keyspace_notification_channels[db_name].close()
+            del self.keyspace_notification_channels[db_name]
 
     def _subscribe_keyspace_notification(self, db_name):
         """
@@ -366,4 +372,4 @@ class DBInterface(object):
         logger.warning('Could not connect to Redis--waiting before trying again.')
         self.close(db_name)
         time.sleep(self.CONNECT_RETRY_WAIT_TIME)
-        self.connect(self.redis_clients[db_name].connection_pool.connection_kwargs['db'], db_name, True)
+        self.connect(self.redis_db_map[db_name], db_name, True)
