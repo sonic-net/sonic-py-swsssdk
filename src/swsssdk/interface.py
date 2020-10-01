@@ -366,4 +366,4 @@ class DBInterface(object):
         logger.warning('Could not connect to Redis--waiting before trying again.')
         self.close(db_name)
         time.sleep(self.CONNECT_RETRY_WAIT_TIME)
-        self.connect(db_name, True)
+        self.connect(self.redis_clients[db_name].connection_pool.connection_kwargs['db'], db_name, True)
