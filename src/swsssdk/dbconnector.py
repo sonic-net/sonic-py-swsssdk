@@ -179,6 +179,16 @@ class SonicDBConfig(object):
         return SonicDBConfig._sonic_db_config[namespace]["INSTANCES"][inst_name]
 
     @staticmethod
+    def get_instancename(db_name, namespace=None):
+        namespace = SonicDBConfig.EMPTY_NAMESPACE(namespace)
+        if not SonicDBConfig._sonic_db_config_init:
+            SonicDBConfig.load_sonic_db_config()
+        SonicDBConfig.db_name_validation(db_name, namespace)
+        inst_name = SonicDBConfig._sonic_db_config[namespace]["DATABASES"][db_name]["instance"]
+        SonicDBConfig.inst_name_validation(inst_name, namespace)
+        return inst_name
+
+    @staticmethod
     def get_instancelist(namespace=None):
         namespace = SonicDBConfig.EMPTY_NAMESPACE(namespace)
         if not SonicDBConfig._sonic_db_config_init:
