@@ -1,5 +1,5 @@
 """
-SONiC ConfigDB connection module 
+SONiC ConfigDB connection module
 
 Example:
     # Write to config DB
@@ -93,11 +93,11 @@ class ConfigDBConnector(SonicV2Connector):
         Args:
             table: Table name.
         """
-        if self.handlers.has_key(table):
+        if table in self.handlers:
             self.handlers.pop(table)
 
     def __fire(self, table, key, data):
-        if self.handlers.has_key(table):
+        if table in self.handlers:
             handler = self.handlers[table]
             handler(table, key, data)
 
@@ -111,7 +111,7 @@ class ConfigDBConnector(SonicV2Connector):
                 key = item['channel'].split(':', 1)[1]
                 try:
                     (table, row) = key.split(self.TABLE_NAME_SEPARATOR, 1)
-                    if self.handlers.has_key(table):
+                    if table in self.handlers:
                         client = self.get_redis_client(self.db_name)
                         data = self.raw_to_typed(client.hgetall(key))
                         self.__fire(table, row, data)
@@ -184,7 +184,7 @@ class ConfigDBConnector(SonicV2Connector):
         else:
             original = self.get_entry(table, key)
             client.hmset(_hash, self.typed_to_raw(data))
-            for k in [ k for k in original.keys() if k not in data.keys() ]:
+            for k in [ k for k in original if k not in data ]:
                 if type(original[k]) == list:
                     k = k + '@'
                 client.hdel(_hash, self.serialize_key(k))
