@@ -29,10 +29,15 @@ class ConfigDBConnector(SonicV2Connector):
     TABLE_NAME_SEPARATOR = '|'
     KEY_SEPARATOR = '|'
 
-    def __init__(self, **kwargs):
+    def __init__(self, decode_responses=True, **kwargs):
         # By default, connect to Redis through TCP, which does not requires root.
         if len(kwargs) == 0:
             kwargs['host'] = '127.0.0.1'
+
+        if PY3K:
+            if not decode_responses:
+                raise NotImplementedError('ConfigDBConnector with decode_responses=False is not supported in python3')
+            kwargs['decode_responses'] = True
 
         """The ConfigDBConnector class will accept the parameter 'namespace' which is used to
            load the database_config and connect to the redis DB instances in that namespace.
@@ -119,8 +124,6 @@ class ConfigDBConnector(SonicV2Connector):
         typed_data = {}
         for raw_key in raw_data:
             key = raw_key
-            if PY3K:
-                key = raw_key.decode()
 
             # "NULL:NULL" is used as a placeholder for objects with no attributes
             if key == "NULL":
@@ -128,17 +131,10 @@ class ConfigDBConnector(SonicV2Connector):
             # A column key with ending '@' is used to mark list-typed table items
             # TODO: Replace this with a schema-based typing mechanism.
             elif key.endswith("@"):
-                value = ""
-                if PY3K:
-                    value = raw_data[raw_key].decode("utf-8").split(',')
-                else:
-                    value = raw_data[raw_key].split(',')
+                value = raw_data[raw_key].split(',')
                 typed_data[key[:-1]] = value
             else:
-                if PY3K:
-                    typed_data[key] = raw_data[raw_key].decode()
-                else:
-                    typed_data[key] = raw_data[raw_key]
+                typed_data[key] = raw_data[raw_key]
         return typed_data
 
     def typed_to_raw(self, typed_data):
@@ -239,8 +235,6 @@ class ConfigDBConnector(SonicV2Connector):
         data = []
         for key in keys:
             try:
-                if PY3K:
-                    key = key.decode()
                 if split:
                     (_, row) = key.split(self.TABLE_NAME_SEPARATOR, 1)
                     data.append(self.deserialize_key(row))
@@ -267,14 +261,9 @@ class ConfigDBConnector(SonicV2Connector):
         for key in keys:
             try:
                 entry = self.raw_to_typed(client.hgetall(key))
-                if entry != None:
-                    if PY3K:
-                        key = key.decode()
-                        (_, row) = key.split(self.TABLE_NAME_SEPARATOR, 1)
-                        data[self.deserialize_key(row)] = entry
-                    else:
-                        (_, row) = key.split(self.TABLE_NAME_SEPARATOR, 1)
-                        data[self.deserialize_key(row)] = entry
+                if entry is not None:
+                    (_, row) = key.split(self.TABLE_NAME_SEPARATOR, 1)
+                    data[self.deserialize_key(row)] = entry
             except ValueError:
                 pass    #Ignore non table-formated redis entries
         return data
@@ -324,8 +313,6 @@ class ConfigDBConnector(SonicV2Connector):
         keys = client.keys('*')
         data = {}
         for key in keys:
-            if PY3K:
-                key = key.decode()
             try:
                 (table_name, row) = key.split(self.TABLE_NAME_SEPARATOR, 1)
                 entry = self.raw_to_typed(client.hgetall(key))
