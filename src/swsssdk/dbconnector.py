@@ -2,9 +2,12 @@
 Database connection module for SwSS
 """
 import os
+import sys
 import json
 from . import logger
 from .interface import DBInterface
+
+PY3K = sys.version_info >= (3, 0)
 
 # FIXME: Convert to metaclasses when Py2 support is removed. Metaclasses have unique interfaces to Python2/Python3.
 
@@ -230,7 +233,12 @@ class SonicDBConfig(object):
         return SonicDBConfig._sonic_db_config[namespace]["DATABASES"][db_name]["separator"]
 
 class SonicV2Connector(object):
-    def __init__(self, use_unix_socket_path=False, namespace=None, **kwargs):
+    def __init__(self, use_unix_socket_path=False, namespace=None, decode_responses=True, **kwargs):
+        if PY3K:
+            if not decode_responses:
+                raise NotImplementedError('SonicV2Connector with decode_responses=False is not supported in python3')
+            kwargs['decode_responses'] = True
+
         self.dbintf = DBInterface(**kwargs)
         self.use_unix_socket_path = use_unix_socket_path
 
