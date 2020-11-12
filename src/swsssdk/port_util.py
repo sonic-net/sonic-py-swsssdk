@@ -98,12 +98,14 @@ def get_bridge_port_map(db):
         br_port_id = br_s[(offset + oid_pfx):]
         ent = db.get_all('ASIC_DB', br_s, blocking=True)
         # TODO: remove the first branch after all SonicV2Connector are migrated to decode_responses
-        if b"SAI_BRIDGE_PORT_ATTR_PORT_ID" in ent:
-            port_id = ent[b"SAI_BRIDGE_PORT_ATTR_PORT_ID"][oid_pfx:]
-            if_br_oid_map[br_port_id] = port_id
-        elif "SAI_BRIDGE_PORT_ATTR_PORT_ID" in ent:
-            port_id = ent["SAI_BRIDGE_PORT_ATTR_PORT_ID"][oid_pfx:]
-            if_br_oid_map[br_port_id] = port_id
+        if isinstance(db, swsssdk.SonicV2Connector) and db.dbintf.redis_kwargs.get('decode_responses', False) == False:
+            if b"SAI_BRIDGE_PORT_ATTR_PORT_ID" in ent:
+                port_id = ent[b"SAI_BRIDGE_PORT_ATTR_PORT_ID"][oid_pfx:]
+                if_br_oid_map[br_port_id] = port_id
+        else:
+            if "SAI_BRIDGE_PORT_ATTR_PORT_ID" in ent:
+                port_id = ent["SAI_BRIDGE_PORT_ATTR_PORT_ID"][oid_pfx:]
+                if_br_oid_map[br_port_id] = port_id
 
     return if_br_oid_map
 
@@ -114,13 +116,14 @@ def get_vlan_id_from_bvid(db, bvid):
     db.connect('ASIC_DB')
     vlan_obj = db.keys('ASIC_DB', "ASIC_STATE:SAI_OBJECT_TYPE_VLAN:" + bvid)
     vlan_entry = db.get_all('ASIC_DB', vlan_obj[0], blocking=True)
+    vlan_id = None
     # TODO: remove the first branch after all SonicV2Connector are migrated to decode_responses
-    if b"SAI_VLAN_ATTR_VLAN_ID" in vlan_entry:
-        vlan_id = vlan_entry[b"SAI_VLAN_ATTR_VLAN_ID"]
-    elif "SAI_VLAN_ATTR_VLAN_ID" in vlan_entry:
-        vlan_id = vlan_entry["SAI_VLAN_ATTR_VLAN_ID"]
+    if isinstance(db, swsssdk.SonicV2Connector) and db.dbintf.redis_kwargs.get('decode_responses', False) == False:
+        if b"SAI_VLAN_ATTR_VLAN_ID" in vlan_entry:
+            vlan_id = vlan_entry[b"SAI_VLAN_ATTR_VLAN_ID"]
     else:
-        vlan_id = None
+        if "SAI_VLAN_ATTR_VLAN_ID" in vlan_entry:
+            vlan_id = vlan_entry["SAI_VLAN_ATTR_VLAN_ID"]
 
     return vlan_id
 
@@ -138,12 +141,14 @@ def get_rif_port_map(db):
         rif_id = rif_s[len("ASIC_STATE:SAI_OBJECT_TYPE_ROUTER_INTERFACE:oid:0x"):]
         ent = db.get_all('ASIC_DB', rif_s, blocking=True)
         # TODO: remove the first branch after all SonicV2Connector are migrated to decode_responses
-        if b"SAI_ROUTER_INTERFACE_ATTR_PORT_ID" in ent:
-            port_id = ent[b"SAI_ROUTER_INTERFACE_ATTR_PORT_ID"].lstrip(b"oid:0x")
-            rif_port_oid_map[rif_id] = port_id
-        elif "SAI_ROUTER_INTERFACE_ATTR_PORT_ID" in ent:
-            port_id = ent["SAI_ROUTER_INTERFACE_ATTR_PORT_ID"].lstrip("oid:0x")
-            rif_port_oid_map[rif_id] = port_id
+        if isinstance(db, swsssdk.SonicV2Connector) and db.dbintf.redis_kwargs.get('decode_responses', False) == False:
+            if b"SAI_ROUTER_INTERFACE_ATTR_PORT_ID" in ent:
+                port_id = ent[b"SAI_ROUTER_INTERFACE_ATTR_PORT_ID"].lstrip(b"oid:0x")
+                rif_port_oid_map[rif_id] = port_id
+        else:
+            if "SAI_ROUTER_INTERFACE_ATTR_PORT_ID" in ent:
+                port_id = ent["SAI_ROUTER_INTERFACE_ATTR_PORT_ID"].lstrip("oid:0x")
+                rif_port_oid_map[rif_id] = port_id
 
     return rif_port_oid_map
 
