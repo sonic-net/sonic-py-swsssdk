@@ -114,7 +114,7 @@ def get_vlan_id_from_bvid(db, bvid):
         Get the Vlan Id from Bridge Vlan Object
     """
     db.connect('ASIC_DB')
-    vlan_obj = db.keys('ASIC_DB', "ASIC_STATE:SAI_OBJECT_TYPE_VLAN:" + bvid)
+    vlan_obj = db.keys('ASIC_DB', str("ASIC_STATE:SAI_OBJECT_TYPE_VLAN:" + bvid))
     vlan_entry = db.get_all('ASIC_DB', vlan_obj[0], blocking=True)
     vlan_id = None
     # TODO: remove the first branch after all SonicV2Connector are migrated to decode_responses
