@@ -413,7 +413,7 @@ class ConfigDBPipeConnector(ConfigDBConnector):
             cur: poition of next item to scan
         """
         cur, keys = client.scan(cursor=cursor, match='*', count=self.REDIS_SCAN_BATCH_SIZE)
-        keys = [key.decode() for key in keys if key != self.INIT_INDICATOR]
+        keys = [key for key in keys if key != self.INIT_INDICATOR]
         for key in keys:
             pipe.hgetall(key)
         records = pipe.execute()
