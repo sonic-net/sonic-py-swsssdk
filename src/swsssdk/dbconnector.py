@@ -305,6 +305,9 @@ class SonicV2Connector(object):
     def get(self, db_name, _hash, key, *args, **kwargs):
         return self.dbintf.get(db_name, _hash, key, *args, **kwargs)
 
+    def hexists(self, db_name, _hash, key, *args, **kwargs):
+        return self.dbintf.hexists(db_name, _hash, key, *args, **kwargs)
+
     def get_all(self, db_name, _hash, *args, **kwargs):
         return self.dbintf.get_all(db_name, _hash, *args, **kwargs)
 

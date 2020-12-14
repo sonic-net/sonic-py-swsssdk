@@ -298,6 +298,19 @@ class DBInterface(object):
             # redis only supports strings. if any item is set to string 'None', cast it back to the appropriate type.
             return None if val == b'None' else val
 
+
+    @blockable
+    def hexists(self, db_name, _hash, key):
+        """
+        Check if the value of Key %key exists in Hashtable %hash
+        in Database %db_name
+
+        Parameter %blocking indicates whether to wait
+        when the query fails
+        """
+        client = self.redis_clients[db_name]
+        return (client.hexists(_hash, key))
+
     @blockable
     def get_all(self, db_name, _hash):
         """
