@@ -26,8 +26,6 @@ PY3K = sys.version_info >= (3, 0)
 class ConfigDBConnector(SonicV2Connector):
 
     INIT_INDICATOR = 'CONFIG_DB_INITIALIZED'
-    TABLE_NAME_SEPARATOR = '|'
-    KEY_SEPARATOR = '|'
 
     def __init__(self, decode_responses=True, **kwargs):
         # By default, connect to Redis through TCP, which does not requires root.
@@ -49,19 +47,26 @@ class ConfigDBConnector(SonicV2Connector):
            'namespace' is implicitly passed to the parent SonicV2Connector class.
         """
         super(ConfigDBConnector, self).__init__(**kwargs)
+        # Trick: to achieve static/instance method "overload", we must use initize the function in ctor
+        # ref: https://stackoverflow.com/a/28766809/2514803
+        self.serialize_key = self._serialize_key
+        self.deserialize_key = self._deserialize_key
+
+        self.TABLE_NAME_SEPARATOR = '|'
+        self.KEY_SEPARATOR = '|'
         self.handlers = {}
 
     def __wait_for_db_init(self):
         client = self.get_redis_client(self.db_name)
         pubsub = client.pubsub()
-        initialized = client.get(self.INIT_INDICATOR)
+        initialized = client.get(ConfigDBConnector.INIT_INDICATOR)
         if not initialized:
-            pattern = "__keyspace@{}__:{}".format(self.get_dbid(self.db_name), self.INIT_INDICATOR)
+            pattern = "__keyspace@{}__:{}".format(self.get_dbid(self.db_name), ConfigDBConnector.INIT_INDICATOR)
             pubsub.psubscribe(pattern)
             for item in pubsub.listen():
                 if item['type'] == 'pmessage':
                     key = item['channel'].split(':', 1)[1]
-                    if key == self.INIT_INDICATOR:
+                    if key == ConfigDBConnector.INIT_INDICATOR:
                         initialized = client.get(self.INIT_INDICATOR)
                         if initialized:
                             break
@@ -151,16 +156,32 @@ class ConfigDBConnector(SonicV2Connector):
                 raw_data[key] = str(value)
         return raw_data
 
+    # Note: we could not use a class variable for KEY_SEPARATOR, but original dependent code is using
+    # these static functions. So we implement both static and instance functions with the same name.
+    # The static function will behave according to ConfigDB separators.
     @staticmethod
     def serialize_key(key):
         if type(key) is tuple:
-            return ConfigDBConnector.KEY_SEPARATOR.join(key)
+            return '|'.join(key)
+        else:
+            return str(key)
+
+    def _serialize_key(self, key):
+        if type(key) is tuple:
+            return self.KEY_SEPARATOR.join(key)
         else:
             return str(key)
 
     @staticmethod
     def deserialize_key(key):
-        tokens = key.split(ConfigDBConnector.KEY_SEPARATOR)
+        tokens = key.split('|')
+        if len(tokens) > 1:
+            return tuple(tokens)
+        else:
+            return key
+
+    def _deserialize_key(self, key):
+        tokens = key.split(self.KEY_SEPARATOR)
         if len(tokens) > 1:
             return tuple(tokens)
         else:
@@ -276,7 +297,6 @@ class ConfigDBConnector(SonicV2Connector):
         client = self.get_redis_client(self.db_name)
         pattern = '{}{}*'.format(table.upper(), self.TABLE_NAME_SEPARATOR)
         keys = client.keys(pattern)
-        data = {}
         for key in keys:
             client.delete(key)
 
