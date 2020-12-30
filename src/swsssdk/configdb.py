@@ -160,32 +160,25 @@ class ConfigDBConnector(SonicV2Connector):
     # these static functions. So we implement both static and instance functions with the same name.
     # The static function will behave according to ConfigDB separators.
     @staticmethod
-    def serialize_key(key):
+    def serialize_key(key, separator='|'):
         if type(key) is tuple:
-            return '|'.join(key)
+            return separator.join(key)
         else:
             return str(key)
 
     def _serialize_key(self, key):
-        if type(key) is tuple:
-            return self.KEY_SEPARATOR.join(key)
-        else:
-            return str(key)
+        return ConfigDBConnector.serialize_key(key, self.KEY_SEPARATOR)
 
     @staticmethod
-    def deserialize_key(key):
-        tokens = key.split('|')
+    def deserialize_key(key, separator='|'):
+        tokens = key.split(separator)
         if len(tokens) > 1:
             return tuple(tokens)
         else:
             return key
 
     def _deserialize_key(self, key):
-        tokens = key.split(self.KEY_SEPARATOR)
-        if len(tokens) > 1:
-            return tuple(tokens)
-        else:
-            return key
+        return ConfigDBConnector.deserialize_key(key, self.KEY_SEPARATOR)
 
     def set_entry(self, table, key, data):
         """Write a table entry to config db.
