@@ -4,6 +4,7 @@ import sys
 import swsssdk
 import redis
 import argparse
+import json
 from multiprocessing import Pool
 from functools import partial
 
@@ -80,6 +81,8 @@ def execute_cmd(dbname, cmd, namespace, use_unix_socket=False):
             print()
         elif isinstance(resp, list):
             print("\n".join(resp))
+        elif isinstance(resp, dict):
+            print(json.dumps(resp))
         else:
             print(resp)
         sys.exit(0)
