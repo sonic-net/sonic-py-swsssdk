@@ -99,7 +99,7 @@ def get_vlan_id_from_bvid(db, bvid):
     db.connect('ASIC_DB')
     vlan_obj = db.keys('ASIC_DB', "ASIC_STATE:SAI_OBJECT_TYPE_VLAN:" + bvid)
     vlan_entry = db.get_all('ASIC_DB', vlan_obj[0], blocking=True)
-    vlan_id = vlan_entry[b"SAI_VLAN_ATTR_VLAN_ID"]
+    vlan_id = vlan_entry.get(b"SAI_VLAN_ATTR_VLAN_ID", None)
 
     return vlan_id
 
