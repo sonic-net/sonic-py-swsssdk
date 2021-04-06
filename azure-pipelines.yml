@@ -29,13 +29,16 @@ stages:
       displayName: 'Checkout code'
     - script: |
         set -ex
-        sudo pip3 install pytest==4.6.2 attrs==19.1.0 exabgp==4.0.10 distro==1.5.0 docker==4.4.1 redis==3.3.4 flaky==3.7.0
+
         python3 setup.py bdist_wheel
-        sudo py.test -v --force-flaky --junitxml=tr.xml
-        user=`id -un`
-        sudo chown $user:$user -R ./
         mkdir -p target/python-wheels/
         cp dist/swsssdk-2.0.1-py3-none-any.whl target/python-wheels/
+      displayName: "Build"
+    - script: |
+        set -ex
+
+        sudo py.test -v --force-flaky --junitxml=tr.xml
+      displayName: "Test"
     - publish: $(System.DefaultWorkingDirectory)/target/python-wheels/
       artifact: sonic-py-swsssdk
     - task: PublishTestResults@2
