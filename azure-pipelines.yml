@@ -39,6 +39,7 @@ stages:
     - script: |
         set -ex
 
+        sudo pip3 install pytest==4.6.2 attrs==19.1.0 exabgp==4.0.10 distro==1.5.0 docker==4.4.1 redis==3.3.4 flaky==3.7.0
         sudo python3 -m pip install dist/swsssdk-2.0.1-py3-none-any.whl
         sudo py.test -v --junitxml=tr.xml
       displayName: "Unit tests"
