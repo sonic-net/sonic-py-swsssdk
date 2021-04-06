@@ -30,7 +30,6 @@ stages:
         echo Hello
         # the following is copied from jenkins
         set -ex
-        pip3 install setuptools
         python3 setup.py bdist_wheel
         mkdir -p target/python-wheels/
         cp dist/swsssdk-2.0.1-{py2,py3}-none-any.whl target/python-wheels/
