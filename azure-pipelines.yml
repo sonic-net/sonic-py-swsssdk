@@ -3,9 +3,6 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
-pool:
-  vmImage: ubuntu-20.04
-
 trigger:
   branches:
     include:
@@ -22,6 +19,11 @@ stages:
   - job:
     displayName: "build"
     timeoutInMinutes: 60
+    pool:
+      vmImage: ubuntu-20.04
+    container:
+      image: sonicdev-microsoft.azurecr.io:443/sonic-slave-buster:latest
+
     steps:
     - checkout: self
       clean: true
@@ -32,17 +34,28 @@ stages:
 
         python3 setup.py bdist_wheel
         mkdir -p target/python-wheels/
-        cp dist/swsssdk-2.0.1-py3-none-any.whl target/python-wheels/
+        cp dist/*.whl $(Build.ArtifactStagingDirectory)/
       displayName: "Build"
     - script: |
         set -ex
 
-        sudo pip3 install pytest==4.6.2 attrs==19.1.0 exabgp==4.0.10 distro==1.5.0 docker==4.4.1 redis==3.3.4 flaky==3.7.0
-        sudo py.test -v --force-flaky --junitxml=tr.xml
-      displayName: "Test"
-    - publish: $(System.DefaultWorkingDirectory)/target/python-wheels/
+        sudo python3 -m pip install dist/swsssdk-2.0.1-py3-none-any.whl
+        python3 setup.py test
+      displayName: "Init tests"
+    - publish: $(Build.ArtifactStagingDirectory)/
       artifact: sonic-py-swsssdk
+      displayName: "Archive artifacts"
     - task: PublishTestResults@2
       inputs:
-        testResultsFiles: 'tr.xml'
-      condition: always()
+        testResultsFiles: '$(System.DefaultWorkingDirectory)/test-results.xml'
+        testRunTitle: Python 3
+        failTaskOnFailedTests: true
+      condition: succeededOrFailed()
+      displayName: 'Publish Python 3 test results'
+
+    - task: PublishCodeCoverageResults@1
+      inputs:
+        codeCoverageTool: Cobertura
+        summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage.xml'
+        reportDirectory: '$(System.DefaultWorkingDirectory)/htmlcov/'
+      displayName: 'Publish Python 3 test coverage'
