@@ -27,6 +27,8 @@ stages:
       submodules: recursive
       displayName: 'Checkout code'
     - script: |
+        echo Hello
+        # the following is copied from jenkins
         set -ex
         python2 setup.py bdist_wheel
         python3 setup.py bdist_wheel
