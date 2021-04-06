@@ -40,7 +40,7 @@ stages:
         set -ex
 
         sudo python3 -m pip install dist/swsssdk-2.0.1-py3-none-any.whl
-        sudo py.test -v --force-flaky --junitxml=tr.xml
+        sudo py.test -v --junitxml=tr.xml
       displayName: "Unit tests"
     - publish: $(Build.ArtifactStagingDirectory)/
       artifact: sonic-py-swsssdk
