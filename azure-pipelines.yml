@@ -22,6 +22,9 @@ stages:
     pool:
       vmImage: ubuntu-20.04
 
+    container:
+      image: sonicdev-microsoft.azurecr.io:443/sonic-slave-buster:latest
+
     steps:
     - checkout: self
       clean: true
@@ -37,8 +40,8 @@ stages:
     - script: |
         set -ex
 
-        sudo pip3 install pytest==4.6.2 attrs==19.1.0 exabgp==4.0.10 distro==1.5.0 docker==4.4.1 redis==3.3.4 flaky==3.7.0
-        sudo py.test -v --junitxml=tr.xml
+        sudo python3 -m pip install dist/swsssdk-2.0.1-py3-none-any.whl
+        python3 setup.py test
       displayName: "Unit tests"
     - publish: $(Build.ArtifactStagingDirectory)/
       artifact: sonic-py-swsssdk
