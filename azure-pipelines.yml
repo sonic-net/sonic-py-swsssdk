@@ -43,13 +43,19 @@ stages:
         sudo python3 -m pip install dist/swsssdk-2.0.1-py3-none-any.whl
         python3 setup.py test
       displayName: "Unit tests"
-    - publish: $(Build.ArtifactStagingDirectory)/
+    - publish: $(System.DefaultWorkingDirectory)/
       artifact: sonic-py-swsssdk
       displayName: "Archive artifacts"
     - task: PublishTestResults@2
       inputs:
-        testResultsFiles: 'tr.xml'
+        testResultsFiles: 'test-results.xml'
         testRunTitle: Python 3
         failTaskOnFailedTests: true
       condition: succeededOrFailed()
       displayName: 'Publish Python 3 test results'
+    - task: PublishCodeCoverageResults@1
+      inputs:
+        codeCoverageTool: Cobertura
+        summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage.xml'
+        reportDirectory: '$(System.DefaultWorkingDirectory)/htmlcov/'
+      displayName: 'Publish Python 3 test coverage'
