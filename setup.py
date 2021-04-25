@@ -5,6 +5,11 @@ dependencies = [
     'redis-dump-load',
 ]
 
+test_deps = [
+    'pytest',
+    'pytest-cov',
+]
+
 high_performance_deps = [
     'hiredis>=0.1.4'
 ]
