@@ -34,7 +34,7 @@ stages:
         set -ex
 
         python3 setup.py bdist_wheel
-        mkdir $(Build.ArtifactStagingDirectory)/target/python-wheels
+        mkdir -p $(Build.ArtifactStagingDirectory)/target/python-wheels
         cp dist/*.whl $(Build.ArtifactStagingDirectory)/target/python-wheels/
       displayName: "Build"
     - script: |
