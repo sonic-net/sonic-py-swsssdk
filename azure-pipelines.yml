@@ -34,8 +34,8 @@ stages:
         set -ex
 
         python3 setup.py bdist_wheel
-        mkdir -p target/python-wheels/
-        cp dist/*.whl $(Build.ArtifactStagingDirectory)/
+        mkdir $(Build.ArtifactStagingDirectory)/target/python-wheels
+        cp dist/*.whl $(Build.ArtifactStagingDirectory)/target/python-wheels/
       displayName: "Build"
     - script: |
         set -ex
@@ -43,12 +43,12 @@ stages:
         sudo python3 -m pip install dist/swsssdk-2.0.1-py3-none-any.whl
         python3 setup.py test
       displayName: "Unit tests"
-    - publish: $(System.DefaultWorkingDirectory)/
+    - publish: $(Build.ArtifactStagingDirectory)
       artifact: sonic-py-swsssdk
       displayName: "Archive artifacts"
     - task: PublishTestResults@2
       inputs:
-        testResultsFiles: 'test-results.xml'
+        testResultsFiles: '$(System.DefaultWorkingDirectory)/test-results.xml'
         testRunTitle: Python 3
         failTaskOnFailedTests: true
       condition: succeededOrFailed()
