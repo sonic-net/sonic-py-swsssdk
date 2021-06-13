@@ -57,20 +57,14 @@ def get_index_from_str(if_name):
         if match:
             return int(match.group(1)) + baseidx
 
-def get_interface_oid_map(db):
+def get_interface_oid_map(db, blocking=True):
     """
         Get the Interface names from Counters DB
     """
-    if_name_map = {}
-    if_id_map = {}
-
     db.connect('COUNTERS_DB')
-    if db.exists('COUNTERS_DB', 'COUNTERS_PORT_NAME_MAP'):
-        if_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_PORT_NAME_MAP', blocking=True)
-
-    if db.exists('COUNTERS_DB', 'COUNTERS_LAG_NAME_MAP'):
-        if_lag_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_LAG_NAME_MAP', blocking=True)
-        if_name_map.update(if_lag_name_map)
+    if_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_PORT_NAME_MAP', blocking)
+    if_lag_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_LAG_NAME_MAP', blocking)
+    if_name_map.update(if_lag_name_map)
 
     if not if_name_map:
         return {}, {}
