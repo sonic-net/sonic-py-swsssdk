@@ -61,10 +61,19 @@ def get_interface_oid_map(db):
     """
         Get the Interface names from Counters DB
     """
+    if_name_map = {}
+    if_id_map = {}
+
     db.connect('COUNTERS_DB')
-    if_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_PORT_NAME_MAP', blocking=True)
-    if_lag_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_LAG_NAME_MAP', blocking=True)
-    if_name_map.update(if_lag_name_map)
+    if db.exists('COUNTERS_DB', 'COUNTERS_PORT_NAME_MAP'):
+        if_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_PORT_NAME_MAP', blocking=True)
+
+    if db.exists('COUNTERS_DB', 'COUNTERS_LAG_NAME_MAP'):
+        if_lag_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_LAG_NAME_MAP', blocking=True)
+        if_name_map.update(if_lag_name_map)
+
+    if not if_name_map:
+        return {}, {}
 
     oid_pfx = len("oid:0x")
     if_name_map = {if_name: sai_oid[oid_pfx:] for if_name, sai_oid in if_name_map.items()}
