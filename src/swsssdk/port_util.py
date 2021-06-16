@@ -14,7 +14,7 @@ SONIC_ETHERNET_BP_RE_PATTERN = "^Ethernet-BP(\d+)$"
 SONIC_VLAN_RE_PATTERN = "^Vlan(\d+)$"
 SONIC_PORTCHANNEL_RE_PATTERN = "^PortChannel(\d+)$"
 SONIC_MGMT_PORT_RE_PATTERN = "^eth(\d+)$"
-
+SONIC_CPU_PORT_RE_PATTERN = "^CPU$"
 
 class BaseIdx:
     ethernet_base_idx = 1
@@ -67,7 +67,7 @@ def get_interface_oid_map(db):
     if_name_map.update(if_lag_name_map)
 
     oid_pfx = len("oid:0x")
-    if_name_map = {if_name: sai_oid[oid_pfx:] for if_name, sai_oid in if_name_map.items()}
+    if_name_map = {if_name: sai_oid[oid_pfx:] for if_name, sai_oid in if_name_map.items() if re.match(SONIC_CPU_PORT_RE_PATTERN, if_name.decode()) is None}
 
     # TODO: remove the first branch after all SonicV2Connector are migrated to decode_responses
     if isinstance(db, swsssdk.SonicV2Connector) and db.dbintf.redis_kwargs.get('decode_responses', False) == False:
