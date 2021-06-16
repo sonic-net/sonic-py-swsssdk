@@ -109,10 +109,6 @@ class SonicDBConfig(object):
         return SonicDBConfig._sonic_db_config_init
 
     @staticmethod
-    def initialize(sonic_db_file_path=SONIC_DB_CONFIG_FILE):
-         SonicDBConfig.load_sonic_db_config(sonic_db_file_path=sonic_db_file_path)
-
-    @staticmethod
     def namespace_validation(namespace):
         # Check the namespace is valid.
         if namespace is None:
