@@ -9,7 +9,7 @@ from functools import partial
 
 def handle_single_instance(op, use_unix_socket, inst_info):
     inst_hostname = inst_info['hostname']
-    if use_unix_socket:
+    if use_unix_socket and inst_hostname != 'redis_chassis.server':
         inst_unix_socket_path = inst_info['unix_socket_path']
         r = redis.Redis(host=inst_hostname, unix_socket_path=inst_unix_socket_path)
     else:
@@ -17,7 +17,7 @@ def handle_single_instance(op, use_unix_socket, inst_info):
         r = redis.Redis(host=inst_hostname, port=inst_port)
     rsp = False
     msg = 'Could not connect to Redis at {}:{}: Connection refused'.format(inst_hostname,
-           inst_unix_socket_path if use_unix_socket else inst_port)
+           inst_unix_socket_path if (use_unix_socket and inst_hostname != 'redis_chassis.server') else inst_port)
     try:
         if op == 'PING':
             rsp = r.ping()
