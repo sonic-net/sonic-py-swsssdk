@@ -66,8 +66,8 @@ def get_interface_oid_map(db, blocking=True):
         Get the Interface names from Counters DB
     """
     db.connect('COUNTERS_DB')
-    if_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_PORT_NAME_MAP', blocking)
-    if_lag_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_LAG_NAME_MAP', blocking)
+    if_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_PORT_NAME_MAP', blocking=blocking)
+    if_lag_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_LAG_NAME_MAP', blocking=blocking)
     if_name_map.update(if_lag_name_map)
 
     if not if_name_map:
