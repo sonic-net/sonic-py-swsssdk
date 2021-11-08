@@ -280,7 +280,7 @@ class DBInterface(object):
             return keys
 
     @blockable
-    def get(self, db_name, _hash, key):
+    def get(self, db_name, _hash, key, log_warning=True):
         """
         Retrieve the value of Key %key from Hashtable %hash
         in Database %db_name
@@ -292,7 +292,8 @@ class DBInterface(object):
         val = client.hget(_hash, key)
         if not val:
             message = "Key '{}' field '{}' unavailable in database '{}'".format(_hash, key, db_name)
-            logger.warning(message)
+            if log_warning:
+                logger.warning(message)
             raise UnavailableDataError(message, _hash)
         else:
             # redis only supports strings. if any item is set to string 'None', cast it back to the appropriate type.
@@ -310,7 +311,8 @@ class DBInterface(object):
         table = client.hgetall(_hash)
         if not table:
             message = "Key '{}' unavailable in database '{}'".format(_hash, db_name)
-            logger.warning(message)
+            if log_warning:
+                logger.warning(message)
             raise UnavailableDataError(message, _hash)
         else:
             # redis only supports strings. if any item is set to string 'None', cast it back to the appropriate type.
