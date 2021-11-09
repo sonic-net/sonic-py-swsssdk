@@ -300,7 +300,7 @@ class DBInterface(object):
             return None if val == b'None' else val
 
     @blockable
-    def get_all(self, db_name, _hash):
+    def get_all(self, db_name, _hash, log_warning=True):
         """
         Get Hashtable %hash from DB %db_name
 
