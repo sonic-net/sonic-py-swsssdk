@@ -280,7 +280,7 @@ class DBInterface(object):
             return keys
 
     @blockable
-    def get(self, db_name, _hash, key, log_warning=True):
+    def get(self, db_name, _hash, key, verbose=True):
         """
         Retrieve the value of Key %key from Hashtable %hash
         in Database %db_name
@@ -292,7 +292,7 @@ class DBInterface(object):
         val = client.hget(_hash, key)
         if not val:
             message = "Key '{}' field '{}' unavailable in database '{}'".format(_hash, key, db_name)
-            if log_warning:
+            if verbose:
                 logger.warning(message)
             raise UnavailableDataError(message, _hash)
         else:
@@ -300,7 +300,7 @@ class DBInterface(object):
             return None if val == b'None' else val
 
     @blockable
-    def get_all(self, db_name, _hash, log_warning=True):
+    def get_all(self, db_name, _hash, verbose=True):
         """
         Get Hashtable %hash from DB %db_name
 
@@ -311,7 +311,7 @@ class DBInterface(object):
         table = client.hgetall(_hash)
         if not table:
             message = "Key '{}' unavailable in database '{}'".format(_hash, db_name)
-            if log_warning:
+            if verbose:
                 logger.warning(message)
             raise UnavailableDataError(message, _hash)
         else:
