@@ -40,6 +40,7 @@ def blockable(f):
                 return ret_data
             except UnavailableDataError as e:
                 if blocking:
+                	logger.warning(e.message)
                     if db_name in inst.keyspace_notification_channels:
                         result = inst._unavailable_data_handler(db_name, e.data)
                         if result:
@@ -274,13 +275,12 @@ class DBInterface(object):
         keys = client.keys(pattern=pattern)
         if not keys:
             message = "DB '{}' is empty!".format(db_name)
-            logger.warning(message)
             raise UnavailableDataError(message, b'hset')
         else:
             return keys
 
     @blockable
-    def get(self, db_name, _hash, key, verbose=True):
+    def get(self, db_name, _hash, key):
         """
         Retrieve the value of Key %key from Hashtable %hash
         in Database %db_name
@@ -292,15 +292,13 @@ class DBInterface(object):
         val = client.hget(_hash, key)
         if not val:
             message = "Key '{}' field '{}' unavailable in database '{}'".format(_hash, key, db_name)
-            if verbose:
-                logger.warning(message)
             raise UnavailableDataError(message, _hash)
         else:
             # redis only supports strings. if any item is set to string 'None', cast it back to the appropriate type.
             return None if val == b'None' else val
 
     @blockable
-    def get_all(self, db_name, _hash, verbose=True):
+    def get_all(self, db_name, _hash):
         """
         Get Hashtable %hash from DB %db_name
 
@@ -311,8 +309,6 @@ class DBInterface(object):
         table = client.hgetall(_hash)
         if not table:
             message = "Key '{}' unavailable in database '{}'".format(_hash, db_name)
-            if verbose:
-                logger.warning(message)
             raise UnavailableDataError(message, _hash)
         else:
             # redis only supports strings. if any item is set to string 'None', cast it back to the appropriate type.
