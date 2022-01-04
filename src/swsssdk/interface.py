@@ -40,7 +40,7 @@ def blockable(f):
                 return ret_data
             except UnavailableDataError as e:
                 if blocking:
-                	logger.warning(e.message)
+                    logger.warning(e.message)
                     if db_name in inst.keyspace_notification_channels:
                         result = inst._unavailable_data_handler(db_name, e.data)
                         if result:
