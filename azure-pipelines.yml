@@ -19,6 +19,9 @@ stages:
   - job:
     displayName: "build"
     timeoutInMinutes: 60
+    variables:
+      DIFF_COVER_CHECK_THRESHOLD: 50
+      DIFF_COVER_ENABLE: 'true'
     pool:
       vmImage: ubuntu-20.04
 
@@ -52,13 +55,6 @@ stages:
         sudo python3 -m pip install dist/swsssdk-2.0.1-py3-none-any.whl
         python3 -m pytest  --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=xml
       displayName: "Unit tests"
-    - script: |
-        sudo pip3 install diff-cover
-        target_branch=$(System.PullRequest.TargetBranch)
-        compare_branch=origin/${target_branch#refs/heads/}
-        diff-cover coverage.xml --compare-branch=$compare_branch
-      condition: eq(variables['Build.Reason'], 'PullRequest')
-      displayName: "Diff coverage"
     - publish: $(Build.ArtifactStagingDirectory)
       artifact: sonic-py-swsssdk
       displayName: "Archive artifacts"
