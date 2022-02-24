@@ -164,6 +164,14 @@ def get_vlan_interface_oid_map(db):
         Get Vlan Interface names and sai oids
     """
     db.connect('COUNTERS_DB')
+    rif_name_exists = db.exists('COUNTERS_DB', 'COUNTERS_RIF_NAME_MAP')
+    if not rif_name_exists:
+        return {}
+
+    rif_type_exists = db.exists('COUNTERS_DB', 'COUNTERS_RIF_TYPE_MAP')
+    if not rif_type_exists:
+        return {}
+
     rif_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_RIF_NAME_MAP', blocking=True)
     rif_type_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_RIF_TYPE_MAP', blocking=True)
 
