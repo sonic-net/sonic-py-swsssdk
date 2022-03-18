@@ -39,7 +39,8 @@ stages:
         sudo dpkg -i packages-microsoft-prod.deb
         sudo apt-get update
         sudo apt-get install -y dotnet-sdk-5.0
-        sudo pip3 install pytest pytest-azurepipelines
+        # Note: pytest-azurepipelines 1.0.3 requires new version of pytest (dist version 3.10.1), which will break pytest-cov 2.6.0
+        sudo pip3 install pytest pytest-azurepipelines==0.8.0
         sudo pip3 install pytest-cov
       displayName: "Install build tools"
     - script: |
