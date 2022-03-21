@@ -14,8 +14,9 @@ SONIC_ETHERNET_BP_RE_PATTERN = "^Ethernet-BP(\d+)$"
 SONIC_VLAN_RE_PATTERN = "^Vlan(\d+)$"
 SONIC_PORTCHANNEL_RE_PATTERN = "^PortChannel(\d+)$"
 SONIC_MGMT_PORT_RE_PATTERN = "^eth(\d+)$"
-
 SONIC_LOOPBACK_RE_PATTERN = "^Loopback(\d+)$"
+SONIC_ETHERNET_IB_RE_PATTERN = "^Ethernet-IB(\d+)$"
+SONIC_ETHERNET_REC_RE_PATTERN = "^Ethernet-Rec(\d+)$"
 
 class BaseIdx:
     ethernet_base_idx = 1
@@ -24,6 +25,8 @@ class BaseIdx:
     portchannel_base_idx = 10000
     mgmt_port_base_idx = 1000
     loopback_base_idx = 20000
+    ethernet_ib_base_idx = 11000
+    ethernet_rec_base_idx = 12000
 
 def get_index(if_name):
     """
@@ -34,6 +37,8 @@ def get_index(if_name):
     PortChannel N = N + 10000
     eth N = N + 1000
     loopback N = N + 20000
+    Ethernet_IB N = N + 11000
+    Ethernet_Rec N = N + 12000
     """
     return get_index_from_str(if_name.decode())
 
@@ -47,6 +52,8 @@ def get_index_from_str(if_name):
     PortChannel N = N + 1000
     eth N = N + 10000
     loopback N = N + 20000
+    Ethernet_IB N = N + 11000
+    Ethernet_Rec N = N + 12000
     """
     patterns = {
         SONIC_ETHERNET_RE_PATTERN: BaseIdx.ethernet_base_idx,
@@ -54,7 +61,9 @@ def get_index_from_str(if_name):
         SONIC_VLAN_RE_PATTERN: BaseIdx.vlan_interface_base_idx,
         SONIC_PORTCHANNEL_RE_PATTERN: BaseIdx.portchannel_base_idx,
         SONIC_MGMT_PORT_RE_PATTERN: BaseIdx.mgmt_port_base_idx,
-        SONIC_LOOPBACK_RE_PATTERN: BaseIdx.loopback_base_idx
+        SONIC_LOOPBACK_RE_PATTERN: BaseIdx.loopback_base_idx,
+        SONIC_ETHERNET_IB_RE_PATTERN: BaseIdx.ethernet_ib_base_idx,
+        SONIC_ETHERNET_REC_RE_PATTERN: BaseIdx.ethernet_rec_base_idx
     }
 
     for pattern, baseidx in patterns.items():
@@ -62,14 +71,17 @@ def get_index_from_str(if_name):
         if match:
             return int(match.group(1)) + baseidx
 
-def get_interface_oid_map(db):
+def get_interface_oid_map(db, blocking=True):
     """
         Get the Interface names from Counters DB
     """
     db.connect('COUNTERS_DB')
-    if_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_PORT_NAME_MAP', blocking=True)
-    if_lag_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_LAG_NAME_MAP', blocking=True)
+    if_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_PORT_NAME_MAP', blocking=blocking)
+    if_lag_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_LAG_NAME_MAP', blocking=blocking)
     if_name_map.update(if_lag_name_map)
+
+    if not if_name_map:
+        return {}, {}
 
     oid_pfx = len("oid:0x")
     if_name_map = {if_name: sai_oid[oid_pfx:] for if_name, sai_oid in if_name_map.items()}

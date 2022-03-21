@@ -40,6 +40,7 @@ def blockable(f):
                 return ret_data
             except UnavailableDataError as e:
                 if blocking:
+                    logger.warning(e.message)
                     if db_name in inst.keyspace_notification_channels:
                         result = inst._unavailable_data_handler(db_name, e.data)
                         if result:
@@ -274,7 +275,6 @@ class DBInterface(object):
         keys = client.keys(pattern=pattern)
         if not keys:
             message = "DB '{}' is empty!".format(db_name)
-            logger.warning(message)
             raise UnavailableDataError(message, b'hset')
         else:
             return keys
@@ -292,7 +292,6 @@ class DBInterface(object):
         val = client.hget(_hash, key)
         if not val:
             message = "Key '{}' field '{}' unavailable in database '{}'".format(_hash, key, db_name)
-            logger.warning(message)
             raise UnavailableDataError(message, _hash)
         else:
             # redis only supports strings. if any item is set to string 'None', cast it back to the appropriate type.
@@ -310,7 +309,6 @@ class DBInterface(object):
         table = client.hgetall(_hash)
         if not table:
             message = "Key '{}' unavailable in database '{}'".format(_hash, db_name)
-            logger.warning(message)
             raise UnavailableDataError(message, _hash)
         else:
             # redis only supports strings. if any item is set to string 'None', cast it back to the appropriate type.

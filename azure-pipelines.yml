@@ -19,6 +19,9 @@ stages:
   - job:
     displayName: "build"
     timeoutInMinutes: 60
+    variables:
+      DIFF_COVER_CHECK_THRESHOLD: 50
+      DIFF_COVER_ENABLE: 'true'
     pool:
       vmImage: ubuntu-20.04
 
@@ -31,6 +34,16 @@ stages:
       submodules: recursive
       displayName: 'Checkout code'
     - script: |
+        set -x
+        wget https://packages.microsoft.com/config/debian/10/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+        sudo dpkg -i packages-microsoft-prod.deb
+        sudo apt-get update
+        sudo apt-get install -y dotnet-sdk-5.0
+        # Note: pytest-azurepipelines 1.0.3 requires new version of pytest (dist version 3.10.1), which will break pytest-cov 2.6.0
+        sudo pip3 install pytest pytest-azurepipelines==0.8.0
+        sudo pip3 install pytest-cov
+      displayName: "Install build tools"
+    - script: |
         set -ex
 
         python3 setup.py bdist_wheel
@@ -41,14 +54,14 @@ stages:
         set -ex
 
         sudo python3 -m pip install dist/swsssdk-2.0.1-py3-none-any.whl
-        python3 setup.py test
+        python3 -m pytest  --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=xml
       displayName: "Unit tests"
     - publish: $(Build.ArtifactStagingDirectory)
       artifact: sonic-py-swsssdk
       displayName: "Archive artifacts"
     - task: PublishTestResults@2
       inputs:
-        testResultsFiles: '$(System.DefaultWorkingDirectory)/test-results.xml'
+        testResultsFiles: '**/test-*.xml'
         testRunTitle: Python 3
         failTaskOnFailedTests: true
       condition: succeededOrFailed()
@@ -56,6 +69,6 @@ stages:
     - task: PublishCodeCoverageResults@1
       inputs:
         codeCoverageTool: Cobertura
-        summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage.xml'
-        reportDirectory: '$(System.DefaultWorkingDirectory)/htmlcov/'
+        summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
+        additionalCodeCoverageFiles: '$(System.DefaultWorkingDirectory)/**/*.coverage'
       displayName: 'Publish Python 3 test coverage'
