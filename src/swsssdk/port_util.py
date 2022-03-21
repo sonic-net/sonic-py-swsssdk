@@ -159,13 +159,14 @@ def get_rif_port_map(db):
 
     return rif_port_oid_map
 
-def get_vlan_interface_oid_map(db):
+def get_vlan_interface_oid_map(db, blocking=True):
     """
         Get Vlan Interface names and sai oids
     """
     db.connect('COUNTERS_DB')
-    rif_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_RIF_NAME_MAP', blocking=True)
-    rif_type_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_RIF_TYPE_MAP', blocking=True)
+
+    rif_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_RIF_NAME_MAP', blocking=blocking)
+    rif_type_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_RIF_TYPE_MAP', blocking=blocking)
 
     if not rif_name_map or not rif_type_name_map:
         return {}
