@@ -226,7 +226,7 @@ class SonicDBConfig(object):
 class SonicV2Connector(object):
     def __init__(self, use_unix_socket_path=False, namespace=None, **kwargs):
         self.dbintf = DBInterface(**kwargs)
-        self.use_unix_socket_path = use_unix_socket_path
+        self.use_unix_socket_path = True if use_unix_socket_path and os.getuid() == 0 else False
 
         """If the user don't give the namespace as input, it refers to the local namespace 
            where this application is run. (It could be a network namespace or linux host namesapce)
