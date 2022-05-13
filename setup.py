@@ -15,7 +15,7 @@ setup(
     package_dir={'swsssdk': 'src/swsssdk'},
     packages=['swsssdk'],
     package_data={'swsssdk': ['config/*.json']},
-    scripts=['src/swsssdk/scripts/sonic-db-cli'],
+    scripts=[],
     license='Apache 2.0',
     author='SONiC Team',
     author_email='linuxnetdev@microsoft.com',
