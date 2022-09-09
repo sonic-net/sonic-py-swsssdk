@@ -1,6 +1,7 @@
 """
 Utility library for Switch-state Redis database access and syslog reporting.
 """
+import sys
 import logging
 
 logger = logging.getLogger(__name__)
