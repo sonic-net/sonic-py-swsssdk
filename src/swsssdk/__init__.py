@@ -15,3 +15,8 @@ except (KeyError, ValueError):
     msg = "Failed to database connector objects -- incorrect database config schema."
     logger.exception(msg)
     raise RuntimeError(msg)
+
+if 'unittest' not in sys.modules.keys():
+    msg = "sonic-py-swsssdk been deprecated, please switch to sonic-swss-common."
+    logger.exception(msg)
+    raise RuntimeError(msg)
