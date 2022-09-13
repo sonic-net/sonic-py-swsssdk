@@ -17,7 +17,8 @@ except (KeyError, ValueError):
     logger.exception(msg)
     raise RuntimeError(msg)
 
-if 'unittest' not in sys.modules.keys():
+if 'unittest' not in sys.modules.keys()
+    and 'mockredis' not in sys.modules.keys():
     msg = "sonic-py-swsssdk been deprecated, please switch to sonic-swss-common."
     logger.exception(msg)
     raise RuntimeError(msg)
