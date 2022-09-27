@@ -5,7 +5,7 @@ modules_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(modules_path, 'src'))
 
 from unittest import TestCase
-
+import subprocess
 
 class Test_load_sonic_db_config(TestCase):
     def test__db_map_attributes(self):
@@ -34,3 +34,7 @@ class Test_load_sonic_db_config(TestCase):
         for namespace in list(dbConfig.get_ns_list()):
             self.assertEqual(dbConfig.get_dbid('PFC_WD_DB', namespace), 5)
             self.assertEqual(dbConfig.get_dbid('APPL_DB', namespace), 0)
+
+def test_BlockUseSwsssdk():
+    result = subprocess.run(["python", "-c", "import swsssdk;exit()"], capture_output=True)
+    assert "deprecated" in result.stderr.decode("utf-8")

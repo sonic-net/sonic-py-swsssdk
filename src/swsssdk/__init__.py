@@ -22,4 +22,4 @@ if ('unittest' not in sys.modules.keys() and
     'mock' not in sys.modules.keys()):
     msg = "sonic-py-swsssdk been deprecated, please switch to sonic-swss-common."
     logger.exception(msg)
-    raise ImportError(msg)
+    raise ImportError("sonic-py-swsssdk been deprecated, please switch to sonic-swss-common.")
