@@ -36,5 +36,12 @@ class Test_load_sonic_db_config(TestCase):
             self.assertEqual(dbConfig.get_dbid('APPL_DB', namespace), 0)
 
 def test_BlockUseSwsssdk():
+    # change working folder to import swsssdk in subprocess
+    swsssdk_path = os.path.join(modules_path, 'src')
+    wd = os.getcwd()
+    os.chdir(swsssdk_path)
+
     result = subprocess.run(["python", "-c", "import swsssdk;exit()"], capture_output=True)
     assert "deprecated" in result.stderr.decode("utf-8")
+
+    os.chdir(wd)
