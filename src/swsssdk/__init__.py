@@ -9,8 +9,8 @@ logger.setLevel(logging.INFO)
 logger.addHandler(logging.NullHandler())
 
 if ('unittest' not in sys.modules.keys() and
-    'mockredis' not in sys.modules.keys() and
-    'mock' not in sys.modules.keys()):
+        'mockredis' not in sys.modules.keys() and
+        'mock' not in sys.modules.keys()):
     msg = "sonic-py-swsssdk been deprecated, please switch to sonic-swss-common."
     logger.exception(msg)
     raise ImportError("sonic-py-swsssdk been deprecated, please switch to sonic-swss-common.")
