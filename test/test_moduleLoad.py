@@ -37,6 +37,7 @@ class Test_load_sonic_db_config(TestCase):
 
 def test_BlockUseSwsssdk():
     # Import swsssdk will throw exception with deprecated message.
+    swsssdk_path = os.path.join(modules_path, 'src')
     result = subprocess.run(["python", "-c", "import swsssdk;exit()"], capture_output=True, cwd=swsssdk_path)
 
     assert "deprecated" in result.stderr.decode("utf-8")
