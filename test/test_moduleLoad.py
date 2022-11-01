@@ -39,8 +39,13 @@ def test_BlockUseSwsssdk():
     # Import swsssdk will throw exception with deprecated message.
     swsssdk_path = os.path.join(modules_path, 'src')
     result = None
+    python_command = "python"
+    
+    if sys.version_info.major == 3:
+        python_command = "python3"
+
     try:
-        subprocess.check_output(["python", "-c", "import swsssdk;exit()"], stderr=subprocess.STDOUT, cwd=swsssdk_path)
+        subprocess.check_output([python_command, "-c", "import swsssdk;exit()"], stderr=subprocess.STDOUT, cwd=swsssdk_path)
     except subprocess.CalledProcessError as e:
         result = e.output.decode("utf-8")
 
