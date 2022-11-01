@@ -42,6 +42,6 @@ def test_BlockUseSwsssdk():
     try:
         subprocess.check_output(["python", "-c", "import swsssdk;exit()"], stderr=subprocess.STDOUT, cwd=swsssdk_path)
     except subprocess.CalledProcessError as e:
-        result = e.output
+        result = e.output.decode("utf-8")
 
     assert "deprecated" in result
