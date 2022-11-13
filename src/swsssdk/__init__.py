@@ -1,11 +1,19 @@
 """
 Utility library for Switch-state Redis database access and syslog reporting.
 """
+import sys
 import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.NullHandler())
+
+if ('unittest' not in sys.modules.keys() and
+        'mockredis' not in sys.modules.keys() and
+        'mock' not in sys.modules.keys()):
+    msg = "sonic-py-swsssdk been deprecated, please switch to sonic-swss-common."
+    logger.exception(msg)
+    raise ImportError("sonic-py-swsssdk been deprecated, please switch to sonic-swss-common.")
 
 try:
     from .dbconnector import SonicDBConfig, SonicV2Connector
