@@ -14,6 +14,25 @@ pr:
     - master
 
 stages:
+- ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+  - stage: Analysis
+    dependsOn: []
+    jobs:
+    - job:
+      displayName: "Semgrep"
+      continueOnError: false
+      pool:
+        vmImage: ubuntu-latest
+      steps:
+      - script: |
+          set -ex
+          target_branch=origin/$(System.PullRequest.TargetBranch)
+          files_changed=$(git --no-pager diff $target_branch..HEAD --name-only --diff-filter=d)
+          python -m pip install --upgrade pip
+          pip install semgrep
+          semgrep --config "p/default" --error $files_changed
+        displayName: 'Run Semgrep'
+
 - stage: Build
   jobs:
   - job:
