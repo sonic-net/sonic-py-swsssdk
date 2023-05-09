@@ -130,10 +130,10 @@ def sonic_db_dump_load():
     if action == DUMP:
         if len(args) > 0:
             parser.print_help()
-            exit(4)
+            sys.exit(4)
         do_dump(options)
     else:
         if len(args) > 1:
             parser.print_help()
-            exit(4)
+            sys.exit(4)
         do_load(options, args)
