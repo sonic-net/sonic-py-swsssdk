@@ -1,7 +1,11 @@
 import os
 import sys
 import pytest
-from unittest.mock import patch, MagicMock
+if sys.version_info.major == 3:
+    from unittest import mock
+else:
+    import mock
+from mock import patch, MagicMock
 
 modules_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(modules_path, 'src'))
