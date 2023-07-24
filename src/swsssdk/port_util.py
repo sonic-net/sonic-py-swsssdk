@@ -5,7 +5,14 @@ import swsssdk
 import re
 
 
-SONIC_ETHERNET_RE_PATTERN = "^Ethernet(\d+)$"
+from swsscommon.swsscommon import FRONT_PANEL_PORT_REGEX
+
+# Following is a list of regexs that match different interfaces type
+# the convention is to have the port index in the end of the name so it can
+# be retrived with match.groups()[-1]
+
+# front panel ports, e.g. Ethernet4
+SONIC_FRONT_PANEL_RE_PATTERN = FRONT_PANEL_PORT_REGEX
 """
 Ethernet-BP refers to BackPlane interfaces
 in multi-asic platform.
@@ -18,7 +25,7 @@ SONIC_ETHERNET_IB_RE_PATTERN = "^Ethernet-IB(\d+)$"
 SONIC_ETHERNET_REC_RE_PATTERN = "^Ethernet-Rec(\d+)$"
 
 class BaseIdx:
-    ethernet_base_idx = 1
+    front_panel_base_idx = 1
     vlan_interface_base_idx = 2000
     ethernet_bp_base_idx = 9000
     portchannel_base_idx = 1000
@@ -52,7 +59,7 @@ def get_index_from_str(if_name):
     Ethernet_Rec N = N + 12000
     """
     patterns = {
-        SONIC_ETHERNET_RE_PATTERN: BaseIdx.ethernet_base_idx,
+        SONIC_FRONT_PANEL_RE_PATTERN: BaseIdx.front_panel_base_idx,
         SONIC_ETHERNET_BP_RE_PATTERN: BaseIdx.ethernet_bp_base_idx,
         SONIC_VLAN_RE_PATTERN: BaseIdx.vlan_interface_base_idx,
         SONIC_PORTCHANNEL_RE_PATTERN: BaseIdx.portchannel_base_idx,
@@ -64,7 +71,7 @@ def get_index_from_str(if_name):
     for pattern, baseidx in patterns.items():
         match = re.match(pattern, if_name)
         if match:
-            return int(match.group(1)) + baseidx
+            return int(match.groups()[-1]) + baseidx
 
 def get_interface_oid_map(db, blocking=True):
     """
