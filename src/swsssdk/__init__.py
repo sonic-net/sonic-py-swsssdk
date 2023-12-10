@@ -10,7 +10,9 @@ logger.addHandler(logging.NullHandler())
 
 if ('unittest' not in sys.modules.keys() and
         'mockredis' not in sys.modules.keys() and
-        'mock' not in sys.modules.keys()):
+        'mock' not in sys.modules.keys() and
+        'netq_agent' not in sys.modules.keys()):
+    # netq_agent temporary fix until move to swsscommon lib.
     msg = "sonic-py-swsssdk been deprecated, please switch to sonic-swss-common."
     logger.exception(msg)
     raise ImportError("sonic-py-swsssdk been deprecated, please switch to sonic-swss-common.")

@@ -1,5 +1,6 @@
 import time
 from functools import wraps
+from . import util
 
 import redis
 from redis import RedisError
@@ -143,6 +144,8 @@ class DBInterface(object):
     ACS Redis db mainly uses hash, therefore h is selected.
     """
 
+    ACL_PW_PATH = '/etc/shadow_redis_dir/shadow_redis_admin'
+
     def __init__(self, **kwargs):
 
         super(DBInterface, self).__init__()
@@ -151,7 +154,13 @@ class DBInterface(object):
         self.redis_kwargs = kwargs
         if len(self.redis_kwargs) == 0:
             self.redis_kwargs['unix_socket_path'] = self.REDIS_UNIX_SOCKET_PATH
-
+            self.redis_kwargs['username'] = 'admin'
+            if 'password' not in self.redis_kwargs:
+                self.redis_kwargs['password'] = util.read_from_file(self.ACL_PW_PATH)
+            redis_shadow_tls_ca="/etc/shadow_redis_dir/certs_redis/ca.crt"
+            self.redis_kwargs['ssl'] = True
+            self.redis_kwargs['ssl_cert_reqs'] = None
+            self.redis_kwargs['ssl_ca_certs'] = redis_shadow_tls_ca
         # For thread safety as recommended by python-redis
         # Create a separate client for each database
         self.redis_clients = DBRegistry()
