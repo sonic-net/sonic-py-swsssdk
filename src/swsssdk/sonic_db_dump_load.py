@@ -97,6 +97,7 @@ def sonic_db_dump_load():
         usage += "\nfrom standard input."
     parser = optparse.OptionParser(usage=usage)
     parser.add_option('-w', '--password', help='connect with PASSWORD')
+    parser.add_option('-u', '--username', help='connect with USERNAME')
     if help == DUMP:
         parser.add_option('-n', '--dbname', help='dump DATABASE (APPL_DB/ASIC_DB...)')
         parser.add_option('-t', '--conntype', help='indicate redis connection type (tcp[default] or unix_socket)', default='tcp')

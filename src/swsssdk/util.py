@@ -65,3 +65,27 @@ def setup_logging(config_file_path, log_level=logging.INFO):
         logging.root.exception(
             "Could not load specified logging configuration '{}'. Verify the filepath exists and is compliant with: "
             "[https://docs.python.org/3/library/logging.config.html#object-connections]".format(config_file_path))
+
+
+def read_from_file(file_path, target_type=str):
+    """
+    Read content from file and convert to target type
+    :param file_path: File path
+    :param target_type: target type
+    :return: content of the file according the target type.
+    """
+    value = None
+    try:
+        with open(file_path, 'r') as f:
+            value = f.read()
+            if value is None:
+                # None return value is not allowed in any case, so we log error here for further debug.
+                logging.error('Failed to read from {}, value is None, errno is {}'.format(file_path, ctypes.get_errno()))
+                # Raise ValueError for the except statement to handle this as a normal exception
+                raise ValueError('File content of {} is None'.format(file_path))
+            else:
+                value = target_type(value.strip())
+    except (ValueError, IOError) as e:
+        logging.error('Failed to read from {}, errno is {}'.format(file_path, str(e)))
+
+    return value
