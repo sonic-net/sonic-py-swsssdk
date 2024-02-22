@@ -93,6 +93,21 @@ def get_interface_oid_map(db, blocking=True):
 
     return if_name_map, if_id_map
 
+def get_lag_interface_oid_map(db):
+    """
+        Get the Lag Interface names from Counters DB
+    """
+    db.connect('COUNTERS_DB')
+    lag_if_name_map = db.get_all('COUNTERS_DB', 'COUNTERS_LAG_NAME_MAP', blocking=True)
+    oid_pfx = len("oid:0x")
+    lag_if_name_map = {if_name: sai_oid[oid_pfx:] for if_name, sai_oid in lag_if_name_map.items()}
+
+    lag_if_id_map = {sai_oid: if_name for if_name, sai_oid in lag_if_name_map.items()
+                 # only map the interface if it's a style understood to be a SONiC interface.
+                 if get_index(if_name) is not None}
+
+    return lag_if_name_map, lag_if_id_map
+
 def get_bridge_port_map(db):
     """
         Get the Bridge port mapping from ASIC DB
