@@ -267,6 +267,13 @@ class SonicV2Connector(object):
         db_id = self.get_dbid(db_name)
         self.dbintf.connect(db_id, db_name, retry_on)
 
+    def connect_host(self, db_name, host, retry_on=True):
+        self.dbintf.redis_kwargs["host"] = host
+        self.dbintf.redis_kwargs["port"] = self.get_db_port(db_name)
+        self.dbintf.redis_kwargs["unix_socket_path"] = None
+        db_id = self.get_dbid(db_name)
+        self.dbintf.connect(db_id, db_name, retry_on)
+
     def close(self, db_name):
         self.dbintf.close(db_name)
 
