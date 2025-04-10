@@ -1,10 +1,7 @@
 import os
 import sys
 
-if sys.version_info.major == 3:
-    from unittest import mock
-else:
-    import mock
+from unittest import mock
 
 modules_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(modules_path, 'src'))
