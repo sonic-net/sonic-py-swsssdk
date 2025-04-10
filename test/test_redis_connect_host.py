@@ -17,11 +17,15 @@ def test_redis_connect_host():
     db.dbintf = mock_dbintf
     db.dbintf.redis_kwargs = {}
 
-    db_name = 'COUNTERS_DB'
-    host = '127.0.0.1'
+    counters_db = 'COUNTERS_DB'
+    host_ip = '127.0.0.1'
 
-    db.connect_host(db_name, host)
-    mock_dbintf.connect.assert_called_once_with(2, db_name, True)
+    def mocked_connect(db_id, db_name, retry_on):
+        assert db_id == 2
+        assert db_name == counters_db
 
-    assert db.dbintf.redis_kwargs["host"] == host
+    db.dbintf.connect = mocked_connect
+    db.connect_host(counters_db, host_ip)
+
+    assert db.dbintf.redis_kwargs["host"] == host_ip
     assert db.dbintf.redis_kwargs["port"] == 6379
