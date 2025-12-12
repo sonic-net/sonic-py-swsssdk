@@ -1,0 +1,99 @@
+load("@aspect_rules_py//py:defs.bzl", "py_library", "py_binary", "py_test")
+
+PIP_DEPS = [
+    "@swsssdk_pip//redis",
+    "@swsssdk_pip//redis_dump_load",
+    "@swsssdk_pip//hiredis",
+]
+
+TEST_DEPS = PIP_DEPS + [
+    "@swsssdk_pip//pytest",
+    "@swsssdk_pip//mock",
+]
+
+# Main library containing the swsssdk Python modules
+py_library(
+    name = "swsssdk",
+    srcs = [
+        "src/swsssdk/__init__.py",
+        "src/swsssdk/configdb.py",
+        "src/swsssdk/dbconnector.py",
+        "src/swsssdk/exceptions.py",
+        "src/swsssdk/interface.py",
+        "src/swsssdk/port_util.py",
+        "src/swsssdk/sonic_db_dump_load.py",
+        "src/swsssdk/util.py",
+    ],
+    data = glob([
+        "src/swsssdk/config/*.json",
+    ]),
+    imports = ["src"],
+    visibility = ["//visibility:public"],
+)
+
+# Console script: sonic-db-dump
+py_binary(
+    name = "sonic-db-dump",
+    srcs = ["src/swsssdk/sonic_db_dump_load.py"],
+    main = "src/swsssdk/sonic_db_dump_load.py",
+    venv = "default",
+    visibility = ["//visibility:public"],
+    deps = [":swsssdk"] + PIP_DEPS,
+)
+
+# Console script: sonic-db-load
+py_binary(
+    name = "sonic-db-load",
+    srcs = ["src/swsssdk/sonic_db_dump_load.py"],
+    main = "src/swsssdk/sonic_db_dump_load.py",
+    venv = "default",
+    visibility = ["//visibility:public"],
+    deps = [":swsssdk"] + PIP_DEPS,
+)
+
+# Test targets
+py_test(
+    name = "test_moduleLoad",
+    srcs = [
+        "test/__init__.py",
+        "test/test_moduleLoad.py",
+    ],
+    imports = ["test"],
+    venv = "default",
+    deps = [":swsssdk"] + PIP_DEPS,
+)
+
+py_test(
+    name = "sonic_db_dump_load_test",
+    srcs = [
+        "test/__init__.py",
+        "test/sonic_db_dump_load_test.py",
+    ],
+    data = glob([
+        "test/config/*.json",
+    ]),
+    imports = ["test"],
+    venv = "default",
+    deps = [":swsssdk"] + TEST_DEPS,
+)
+
+py_test(
+    name = "test_port_util",
+    srcs = [
+        "test/__init__.py",
+        "test/test_port_util.py",
+    ],
+    imports = ["test"],
+    venv = "default",
+    deps = [":swsssdk"] + PIP_DEPS,
+)
+
+# Test suite for running all tests
+test_suite(
+    name = "all-tests",
+    tests = [
+        ":test_moduleLoad",
+        ":sonic_db_dump_load_test",
+        ":test_port_util",
+    ],
+)
