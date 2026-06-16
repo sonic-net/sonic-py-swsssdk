@@ -392,9 +392,10 @@ class ConfigDBPipeConnector(ConfigDBConnector):
         else:
             pipe.hmset(_hash, self.typed_to_raw(data))
 
-    def mod_config(self, data):
+    def mod_config(self, data, table_delete=None):
         """Write multiple tables into config db.
            Extra entries/fields in the db which are not in the data are kept.
+           Pass one or more tables in table_delete to delete tables before update.
         Args:
             data: config data in a dictionary form
             { 
@@ -402,9 +403,16 @@ class ConfigDBPipeConnector(ConfigDBConnector):
                 'MULTI_KEY_TABLE_NAME': { ('l1_key', 'l2_key', ...) : {'column_key': 'value', ...}, ...},
                 ...
             }
+            table_delete: Table name(s) that will be deleted first before modify
         """
         client = self.get_redis_client(self.db_name)
         pipe = client.pipeline()
+        if table_delete:
+            if isinstance(table_delete, list):
+                for t in table_delete:
+                    self.__delete_table(client, pipe, t)
+            else:
+                self.__delete_table(client, pipe, table_delete)
         for table_name in data:
             table_data = data[table_name]
             if table_data is None:
