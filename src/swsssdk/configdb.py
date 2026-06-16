@@ -132,7 +132,7 @@ class ConfigDBConnector(SonicV2Connector):
 
             # "NULL:NULL" is used as a placeholder for objects with no attributes
             if key == "NULL":
-                pass
+                typed_data = { "NULL": "NULL" }
             # A column key with ending '@' is used to mark list-typed table items
             # TODO: Replace this with a schema-based typing mechanism.
             elif key.endswith("@"):
