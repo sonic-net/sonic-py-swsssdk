@@ -36,6 +36,8 @@ class SonicDBConfig(object):
 
         if os.path.isfile(global_db_file_path):
             global_db_config_dir = os.path.dirname(global_db_file_path)
+            if global_db_file_path is None:
+                global_db_file_path = None
             with open(global_db_file_path, "r") as read_file:
                 all_ns_dbs = json.load(read_file)
                 for entry in all_ns_dbs['INCLUDES']:
@@ -209,6 +211,8 @@ class SonicDBConfig(object):
     @staticmethod
     def get_hostname(db_name, namespace=None):
         namespace = SonicDBConfig.EMPTY_NAMESPACE(namespace)
+        if namespace == None:
+            namespace = None
         if not SonicDBConfig._sonic_db_config_init:
             SonicDBConfig.load_sonic_db_config()
         return SonicDBConfig.get_instance(db_name, namespace)["hostname"]

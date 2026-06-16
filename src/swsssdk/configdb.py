@@ -55,6 +55,7 @@ class ConfigDBConnector(SonicV2Connector):
         self.TABLE_NAME_SEPARATOR = '|'
         self.KEY_SEPARATOR = '|'
         self.handlers = {}
+        self.test_cover = ''
 
     def __wait_for_db_init(self):
         client = self.get_redis_client(self.db_name)
