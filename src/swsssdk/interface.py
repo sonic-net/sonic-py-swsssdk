@@ -355,7 +355,7 @@ class DBInterface(object):
         while time.time() - start < self.PUB_SUB_MAXIMUM_DATA_WAIT:
             msg = self.keyspace_notification_channels[db_name].get_message(timeout=self.PUB_SUB_NOTIFICATION_TIMEOUT)
             if msg is not None and msg.get('data') == data:
-                logger.info("'{}' acquired via pub-sub. Unblocking...".format(data, db_name))
+                logger.info("'{}' acquired via pub-sub. Unblocking...".format(data))
                 # Wait for a "settling" period before releasing the wait.
                 time.sleep(self.DATA_RETRIEVAL_WAIT_TIME)
                 return True
