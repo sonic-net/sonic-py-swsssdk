@@ -15,6 +15,13 @@ pr:
     - master
     - 202???
 
+variables:
+  - name: BUILD_BRANCH
+    ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+      value: $(System.PullRequest.TargetBranch)
+    ${{ else }}:
+      value: $(Build.SourceBranchName)
+
 stages:
 - stage: Build
   jobs:
@@ -28,7 +35,7 @@ stages:
       vmImage: ubuntu-latest
 
     container:
-      image: sonicdev-microsoft.azurecr.io:443/sonic-slave-buster:latest
+      image: sonicdev-microsoft.azurecr.io:443/sonic-slave-trixie:$(BUILD_BRANCH)
 
     steps:
     - checkout: self
@@ -36,13 +43,13 @@ stages:
       submodules: recursive
       displayName: 'Checkout code'
     - script: |
-        set -x
-        wget https://packages.microsoft.com/config/debian/10/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-        sudo dpkg -i packages-microsoft-prod.deb
+        set -ex
+        sudo mkdir -p /etc/apt/keyrings
+        curl -sSL https://packages.microsoft.com/keys/microsoft-2025.asc | sudo gpg --dearmor -o /etc/apt/keyrings/microsoft-prod.gpg
+        echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/debian/13/prod trixie main" | sudo tee /etc/apt/sources.list.d/microsoft-prod.list
         sudo apt-get update
-        sudo apt-get install -y dotnet-sdk-5.0
-        # Note: pytest-azurepipelines 1.0.3 requires new version of pytest (dist version 3.10.1), which will break pytest-cov 2.6.0
-        sudo pip3 install pytest pytest-azurepipelines==0.8.0
+        sudo apt-get install -y diff-cover dotnet-sdk-8.0
+        sudo pip3 install pytest pytest-azurepipelines==1.0.5
         sudo pip3 install pytest-cov
       displayName: "Install build tools"
     - script: |
