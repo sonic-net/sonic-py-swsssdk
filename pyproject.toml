@@ -1,0 +1,13 @@
+[project]
+name = "swsssdk"
+version = "2.0.1"
+requires-python = ">=3.11"
+dependencies = [
+    "redis>=4.5.4",
+    "redis-dump-load",
+    "hiredis>=0.1.4",
+    "setuptools>=40.8.0",
+    "build",
+    "pytest",
+    "mock",
+]
