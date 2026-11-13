@@ -1,0 +1,25 @@
+load("@rules_python//python:py_test.bzl", "py_test")
+
+filegroup(
+    name = "runtime_metadata",
+    srcs = ["@sonic-py-swsssdk//:swsssdk.runtime"],
+    output_group = "metadata",
+)
+
+py_test(
+    name = "distribution_test",
+    srcs = ["distribution_test.py"],
+    args = [
+        "$(location @sonic-py-swsssdk//:swsssdk.wheel)",
+        "$(location @sonic-py-swsssdk//:swsssdk.runtime)",
+        "$(location @sonic-py-swsssdk//:setup.py)",
+        "$(locations :runtime_metadata)",
+    ],
+    data = [
+        ":runtime_metadata",
+        "@sonic-py-swsssdk//:source_files",
+        "@sonic-py-swsssdk//:setup.py",
+        "@sonic-py-swsssdk//:swsssdk.wheel",
+        "@sonic-py-swsssdk//:swsssdk.runtime",
+    ],
+)

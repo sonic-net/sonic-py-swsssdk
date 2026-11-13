@@ -1,0 +1,24 @@
+module(
+    name = "sonic-py-swsssdk",
+    version = "2.0.1",
+    bazel_compatibility = [">=8.5.1", "<=8.5.1"],
+)
+
+bazel_dep(name = "rules_python", version = "1.9.0.sonic.1")
+bazel_dep(
+    name = "sonic-build-infra",
+    version = "0.0.33-0d2435b572eca4a6f1db6e003b04956c09fb1a39",
+    repo_name = "sonic_build_infra",
+)
+bazel_dep(name = "redis-dump-load", version = "1.1.sonic.1", repo_name = "redis_dump_load")
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(python_version = "3.13")
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    hub_name = "swsssdk_test_pip",
+    python_version = "3.13",
+    requirements_lock = "//:requirements-test.lock",
+)
+use_repo(pip, "swsssdk_test_pip")

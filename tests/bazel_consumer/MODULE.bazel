@@ -1,0 +1,12 @@
+module(name = "swsssdk_consumer")
+
+bazel_dep(name = "sonic-py-swsssdk", version = "2.0.1")
+bazel_dep(name = "rules_python", version = "1.9.0.sonic.1")
+bazel_dep(
+    name = "sonic-build-infra",
+    version = "0.0.33-0d2435b572eca4a6f1db6e003b04956c09fb1a39",
+    repo_name = "sonic_build_infra",
+)
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(python_version = "3.13")

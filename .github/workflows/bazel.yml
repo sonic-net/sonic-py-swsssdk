@@ -1,0 +1,28 @@
+name: Bazel
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  python3:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: bazel-contrib/setup-bazel@0.19.2
+      - name: Build Python distribution and installation targets
+        run: bazel build //:swsssdk //:swsssdk.wheel //:swsssdk.runtime //:swsssdk.runtime_metadata
+      - name: Run upstream tests
+        run: bazel test //:upstream_tests --test_output=errors
+      - name: Verify distribution through an independent consumer
+        working-directory: tests/bazel_consumer
+        run: |
+          cat >> MODULE.bazel <<'EOF'
+
+          local_path_override(module_name = "sonic-py-swsssdk", path = "../..")
+          EOF
+          bazel test //:distribution_test --test_output=errors

@@ -1,0 +1,6 @@
+# Compatible versions already used by SONiC's shared Python environment.
+redis==4.5.4
+mock==3.0.5
+pytest==8.4.2
+# The original slave environment requires pytest-cov without pinning its version.
+pytest-cov==6.0.0
