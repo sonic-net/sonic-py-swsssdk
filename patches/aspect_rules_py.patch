@@ -1,0 +1,15 @@
+--- MODULE.bazel
++++ MODULE.bazel
+@@ -15,6 +15,11 @@ bazel_dep(name = "platforms", version = "1.0.0")
+ bazel_dep(name = "rules_python", version = "1.0.0")
+ bazel_dep(name = "with_cfg.bzl", version = "0.11.0")
+ bazel_dep(name = "rules_cc", version = "0.2.11")
++bazel_dep(name = "tar.bzl", version = "0.5.5")
++
++bazel_lib_toolchains = use_extension("@tar.bzl//tar:extensions.bzl", "toolchains")
++use_repo(bazel_lib_toolchains, "bsd_tar_toolchains")
++register_toolchains("@bsd_tar_toolchains//:all")
+
+ tools = use_extension("//py:extensions.bzl", "py_tools")
+ tools.rules_py_tools()
+
