@@ -1,0 +1,54 @@
+load("@rules_python//python:py_library.bzl", "py_library")
+load("@rules_python//python:py_test.bzl", "py_test")
+load("@swsssdk_test_pip//:requirements.bzl", "requirement")
+load(":metadata.bzl", "distribution_targets")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["LICENSE", "setup.py", "requirements-test.lock"])
+
+py_library(
+    name = "swsssdk",
+    srcs = [
+        "src/swsssdk/__init__.py",
+        "src/swsssdk/configdb.py",
+        "src/swsssdk/dbconnector.py",
+        "src/swsssdk/exceptions.py",
+        "src/swsssdk/interface.py",
+        "src/swsssdk/port_util.py",
+        "src/swsssdk/sonic_db_dump_load.py",
+        "src/swsssdk/util.py",
+    ],
+    data = ["src/swsssdk/config/database_config.json"],
+    imports = ["src"],
+    deps = [
+        "@redis_dump_load//:redisdl",
+        requirement("redis"),
+    ],
+)
+
+distribution_targets()
+
+filegroup(
+    name = "source_files",
+    srcs = ["LICENSE", "setup.py"] + glob(["src/swsssdk/*.py", "src/swsssdk/config/*.json"]),
+)
+
+filegroup(
+    name = "swsssdk.runtime_metadata",
+    srcs = [":swsssdk.runtime"],
+    output_group = "metadata",
+)
+
+py_test(
+    name = "upstream_tests",
+    srcs = ["pytest_runner.py"] + glob(["test/*.py"]),
+    main = "pytest_runner.py",
+    data = ["pytest.ini"] + glob(["test/config/*.json"]),
+    deps = [
+        ":swsssdk",
+        requirement("mock"),
+        requirement("pytest"),
+        requirement("pytest-cov"),
+    ],
+)
