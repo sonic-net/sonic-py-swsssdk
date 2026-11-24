@@ -136,3 +136,8 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
+
+# Bazel local outputs and configuration
+/bazel-*
+/MODULE.bazel.lock
+/.bazelrc.user
