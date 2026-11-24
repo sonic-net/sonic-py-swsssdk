@@ -50,12 +50,15 @@ the test lock does not replace an image's runtime dependency resolution.
 `tests/bazel_consumer` is an independent consumer module. It checks wheel and
 installation contents against the effective upstream setup.py declaration, RECORD
 hashes, resource bytes, metadata queries, the deprecated import, and transitive
-source package metadata. For development, its root MODULE may temporarily use
-`local_path_override(module_name = "sonic-py-swsssdk", path = "/absolute/source")`.
-Update the consumer bazel_dep to the published commit-qualified version and
-remove that override when validating a published registry version.
+source package metadata. Run the consumer against the source checkout with Bazel 8.5.1:
+
+```sh
+(cd tests/bazel_consumer && bazel test --override_module=sonic-py-swsssdk=../.. //:distribution_test)
+```
+
+Omit the override to test the published module from the SONiC registry.
 
 Local cache and registry settings can be placed in the ignored `.bazelrc.user`.
 
-The GitHub Bazel workflow builds the public targets, runs the upstream suite,
-and verifies the same checkout through the independent consumer module.
+The native AMD64 and ARM64 GitHub jobs build the public targets, run the upstream suite,
+and verify the same checkout through the independent consumer module.
