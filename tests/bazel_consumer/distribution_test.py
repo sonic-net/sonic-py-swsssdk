@@ -20,9 +20,6 @@ import unittest
 from unittest.mock import patch
 import zipfile
 
-WHEEL, RUNTIME, SETUP = map(Path, sys.argv[1:4])
-RUNTIME_METADATA = list(map(Path, sys.argv[4:]))
-del sys.argv[1:]
 SITE = "usr/local/lib/python3.13/dist-packages/"
 
 
@@ -41,6 +38,9 @@ def requirement(value):
 
 
 class DistributionContract(unittest.TestCase):
+    # Bazel supplies built distributions when it runs this file as a test binary.
+    __test__ = False
+
     @classmethod
     def setUpClass(cls):
         cls.contract = setup_contract()
@@ -176,4 +176,6 @@ class DistributionContract(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    WHEEL, RUNTIME, SETUP = map(Path, sys.argv[1:4])
+    RUNTIME_METADATA = list(map(Path, sys.argv[4:]))
+    unittest.main(argv=[sys.argv[0]])
