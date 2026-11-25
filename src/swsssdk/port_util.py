@@ -16,6 +16,7 @@ SONIC_PORTCHANNEL_RE_PATTERN = "^PortChannel(\d+)$"
 SONIC_MGMT_PORT_RE_PATTERN = "^eth(\d+)$"
 SONIC_ETHERNET_IB_RE_PATTERN = "^Ethernet-IB(\d+)$"
 SONIC_ETHERNET_REC_RE_PATTERN = "^Ethernet-Rec(\d+)$"
+SONIC_DOCKER_BRD_PATTERN = "^docker(\d+)$"
 
 class BaseIdx:
     ethernet_base_idx = 1
@@ -25,6 +26,7 @@ class BaseIdx:
     mgmt_port_base_idx = 10000
     ethernet_ib_base_idx = 11000
     ethernet_rec_base_idx = 12000
+    docker_brd_base_idx = 4000
 
 def get_index(if_name):
     """
@@ -36,6 +38,7 @@ def get_index(if_name):
     eth N = N + 10000
     Ethernet_IB N = N + 11000
     Ethernet_Rec N = N + 12000
+    docker_brdg N = N + 4000
     """
     return get_index_from_str(if_name.decode())
 
@@ -50,6 +53,7 @@ def get_index_from_str(if_name):
     eth N = N + 10000
     Ethernet_IB N = N + 11000
     Ethernet_Rec N = N + 12000
+    docker_brdg N = N + 4000
     """
     patterns = {
         SONIC_ETHERNET_RE_PATTERN: BaseIdx.ethernet_base_idx,
@@ -58,7 +62,8 @@ def get_index_from_str(if_name):
         SONIC_PORTCHANNEL_RE_PATTERN: BaseIdx.portchannel_base_idx,
         SONIC_MGMT_PORT_RE_PATTERN: BaseIdx.mgmt_port_base_idx,
         SONIC_ETHERNET_IB_RE_PATTERN: BaseIdx.ethernet_ib_base_idx,
-        SONIC_ETHERNET_REC_RE_PATTERN: BaseIdx.ethernet_rec_base_idx
+        SONIC_ETHERNET_REC_RE_PATTERN: BaseIdx.ethernet_rec_base_idx,
+        SONIC_DOCKER_BRD_PATTERN: BaseIdx.docker_brd_base_idx
     }
 
     for pattern, baseidx in patterns.items():
