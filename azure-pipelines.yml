@@ -66,6 +66,26 @@ stages:
         sudo python3 -m pip install dist/swsssdk-2.0.1-py3-none-any.whl
         python3 -m pytest -p no:azurepipelines --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=xml
       displayName: "Unit tests"
+    - bash: |
+        set -euo pipefail
+        bazel="$AGENT_TEMPDIRECTORY/bazel-sdk"
+        version=$(cat .bazelversion)
+        curl --fail --silent --show-error --location --retry 3 \
+          "https://releases.bazel.build/$version/release/bazel-$version-linux-x86_64" -o "$bazel"
+        echo "61d89402f0368e64b6c827be5de79d8e65382e8124c3cbb97325611a1851392e  $bazel" | sha256sum --check
+        chmod +x "$bazel"
+
+        "$bazel" build --symlink_prefix=/ //:swsssdk.wheel //:swsssdk.runtime //:swsssdk.runtime_metadata
+        "$bazel" cquery --symlink_prefix=/ --output=files //:swsssdk.runtime_metadata > "$AGENT_TEMPDIRECTORY/sdk-metadata"
+        execroot=$("$bazel" info execution_root)
+        bin=$("$bazel" info bazel-bin)
+        metadata=()
+        while IFS= read -r file; do metadata+=("$execroot/$file"); done < "$AGENT_TEMPDIRECTORY/sdk-metadata"
+        python3 -m coverage run --append --source=. tests/bazel_consumer/distribution_test.py \
+          "$bin"/*.whl "$bin/swsssdk.runtime.tar" setup.py "${metadata[@]}"
+        python3 -m coverage xml
+        python3 -m coverage html
+      displayName: "Cover the Bazel wheel and runtime distribution contracts"
     - publish: $(Build.ArtifactStagingDirectory)
       artifact: sonic-py-swsssdk
       displayName: "Archive artifacts"
