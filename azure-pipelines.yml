@@ -50,7 +50,7 @@ stages:
         echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/debian/13/prod trixie main" | sudo tee /etc/apt/sources.list.d/microsoft-prod.list
         sudo apt-get update
         sudo apt-get install -y diff-cover dotnet-sdk-8.0
-        sudo pip3 install pytest pytest-azurepipelines==1.0.5
+        sudo pip3 install pytest
         sudo pip3 install pytest-cov
       displayName: "Install build tools"
     - script: |
@@ -64,7 +64,7 @@ stages:
         set -ex
 
         sudo python3 -m pip install dist/swsssdk-2.0.1-py3-none-any.whl
-        python3 -m pytest  --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=xml
+        python3 -m pytest -p no:azurepipelines --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=xml
       displayName: "Unit tests"
     - publish: $(Build.ArtifactStagingDirectory)
       artifact: sonic-py-swsssdk
